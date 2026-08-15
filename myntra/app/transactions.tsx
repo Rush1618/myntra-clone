@@ -14,7 +14,7 @@ import { useAppTheme } from "@/theme/ThemeProvider";
 import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 
-const API_BASE = "http://192.168.0.114:5000";
+import { API_BASE_URL } from "@/constants/Api";
 const PAGE_SIZE = 20;
 
 type Order = {
@@ -57,7 +57,7 @@ export default function TransactionsScreen() {
         if (currentFilter) {
           params.status = currentFilter;
         }
-        const { data } = await axios.get(`${API_BASE}/Order/user/${user._id}`, {
+        const { data } = await axios.get(`${API_BASE_URL}/Order/user/${user._id}`, {
           params,
         });
         setOrders((prev) => (reset ? data.orders : [...prev, ...data.orders]));
@@ -92,11 +92,11 @@ export default function TransactionsScreen() {
 
   const downloadCSV = () => {
     if (!user?._id) return;
-    void Linking.openURL(`${API_BASE}/export/orders/${user._id}/csv`);
+    void Linking.openURL(`${API_BASE_URL}/export/orders/${user._id}/csv`);
   };
 
   const downloadReceipt = (orderId: string) => {
-    void Linking.openURL(`${API_BASE}/export/orders/${orderId}/receipt`);
+    void Linking.openURL(`${API_BASE_URL}/export/orders/${orderId}/receipt`);
   };
 
   const badge = (status: string) =>

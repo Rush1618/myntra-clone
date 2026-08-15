@@ -12,7 +12,7 @@ import axios from "axios";
 import { useRouter } from "expo-router";
 import { useAppTheme } from "@/theme/ThemeProvider";
 
-const API_BASE = "http://192.168.0.114:5000";
+import { API_BASE_URL } from "@/constants/Api";
 const CARD_WIDTH = Dimensions.get("window").width * 0.42;
 
 type Product = {
@@ -54,7 +54,7 @@ export function RecommendationCarousel({
     isFetching.current = true;
     try {
       const exclude = excludeIds.join(",");
-      const { data } = await axios.get(`${API_BASE}/recommendations/${userId}`, {
+      const { data } = await axios.get(`${API_BASE_URL}/recommendations/${userId}`, {
         params: { limit: 20, ...(exclude ? { exclude } : {}) },
       });
       setProducts(data.recommendations ?? []);

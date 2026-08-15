@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useAppTheme } from "@/theme/ThemeProvider";
+import { API_BASE_URL } from "@/constants/Api";
 
 const dummyWishlistItems = [
   {
@@ -47,7 +48,7 @@ export default function Wishlist() {
       try {
         setIsLoading(true);
         const bag = await axios.get(
-          `http://192.168.0.114:5000/wishlist/${user._id}`
+          `${API_BASE_URL}/wishlist/${user._id}`
         );
         if (bag.data && bag.data.length > 0) {
           setwishlist(bag.data);
@@ -65,7 +66,7 @@ export default function Wishlist() {
   };
   const handledelete=async(itemid:any)=>{
     try {
-      await axios.delete(`http://192.168.0.114:5000/wishlist/${itemid}`)
+      await axios.delete(`${API_BASE_URL}/wishlist/${itemid}`)
       fetchproduct();
     } catch (error) {
       console.log(error)

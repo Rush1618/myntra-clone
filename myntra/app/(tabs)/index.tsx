@@ -17,6 +17,7 @@ import axios from "axios";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { RecommendationCarousel } from "@/components/RecommendationCarousel";
 import { fetchWithCache } from "@/utils/apiCache";
+import { API_BASE_URL } from "@/constants/Api";
 
 // const categories = [
 //   {
@@ -114,8 +115,8 @@ export default function Home() {
     const fetchproduct = async () => {
       try {
         setIsLoading(true);
-        const catData = await fetchWithCache("http://192.168.0.114:5000/category");
-        const prodData = await fetchWithCache("http://192.168.0.114:5000/product");
+        const catData = await fetchWithCache(`${API_BASE_URL}/category`);
+        const prodData = await fetchWithCache(`${API_BASE_URL}/product`);
         setcategories(catData);
         setproduct(prodData);
       } catch (error) {
@@ -138,7 +139,7 @@ export default function Home() {
         // Pad to 20 products max and min
         if (local.length < 20) {
           try {
-            const res = await axios.get("http://192.168.0.114:5000/product");
+            const res = await axios.get(`${API_BASE_URL}/product`);
             const allProducts = res.data;
             const localIds = new Set(local.map((item: any) => item._id));
             const padding = allProducts.filter((p: any) => !localIds.has(p._id));

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+ import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Linking
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -24,7 +25,7 @@ import React from "react";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { Linking } from "react-native";
+import { API_BASE_URL } from "@/constants/Api";
 
 const orders = [
   {
@@ -148,7 +149,7 @@ export default function Orders() {
         try {
           setIsLoading(true);
           const response = await axios.get(
-            `http://192.168.0.114:5000/order/user/${user._id}`
+            `${API_BASE_URL}/order/user/${user._id}`
           );
           if (Array.isArray(response.data)) {
             setFetchedOrders(response.data);
@@ -189,7 +190,7 @@ export default function Orders() {
         <Text style={[styles.headerTitle, { color: colors.text }]}>My Orders</Text>
         <TouchableOpacity
           style={{ flexDirection: "row", alignItems: "center", gap: 5, padding: 8, backgroundColor: colors.surface, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}
-          onPress={() => user && Linking.openURL(`http://192.168.0.114:5000/Order/export/csv/${user._id}`)}
+          onPress={() => user && Linking.openURL(`${API_BASE_URL}/Order/export/csv/${user._id}`)}
         >
           <Download size={16} color={colors.text} />
           <Text style={{ fontSize: 12, fontWeight: "600", color: colors.text }}>Export CSV</Text>
@@ -252,7 +253,7 @@ export default function Orders() {
                   
                   <TouchableOpacity
                     style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 10 }}
-                    onPress={() => Linking.openURL(`http://192.168.0.114:5000/Order/receipt/${order._id}`)}
+                    onPress={() => Linking.openURL(`${API_BASE_URL}/Order/receipt/${order._id}`)}
                   >
                     <FileText size={16} color={colors.primary} />
                     <Text style={{ color: colors.primary, fontWeight: "600" }}>Download PDF Receipt</Text>

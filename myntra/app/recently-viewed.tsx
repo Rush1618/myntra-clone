@@ -13,6 +13,7 @@ import { ChevronLeft } from "lucide-react-native";
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
 import { fetchRecentlyViewed } from "@/utils/recentlyViewed";
+import { API_BASE_URL } from "@/constants/Api";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import axios from "axios";
@@ -35,7 +36,7 @@ export default function RecentlyViewedScreen() {
           
           if (entries.length < 20) {
             try {
-              const res = await axios.get("http://192.168.0.114:5000/product");
+              const res = await axios.get(`${API_BASE_URL}/product`);
               const allProducts = res.data;
               const localIds = new Set(entries.map((item: any) => item._id));
               const padding = allProducts.filter((p: any) => !localIds.has(p._id));

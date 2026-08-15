@@ -3,6 +3,7 @@ import { getUserData, saveUserData, clearUserData } from "@/utils/storage";
 import { mergeLocalRecentlyViewedWithServer, clearLocalRecentlyViewed } from "@/utils/recentlyViewed";
 import React from "react";
 import axios from "axios";
+import { API_BASE_URL } from "@/constants/Api";
 type AuthContextType = {
   isAuthenticated: boolean;
   user: { _id: string; name: string; email: string } | null;
@@ -41,7 +42,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     // If testing on Android Emulator, change localhost to 10.0.2.2
-    const res = await axios.post("http://192.168.0.114:5000/user/login", {
+    const res = await axios.post(`${API_BASE_URL}/user/login`, {
       email,
       password,
     });
@@ -58,7 +59,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
   const Signup = async (fullName: string, email: string, password: string) => {
     // If testing on Android Emulator, change localhost to 10.0.2.2
-    const res = await axios.post("http://192.168.0.114:5000/user/signup", {
+    const res = await axios.post(`${API_BASE_URL}/user/signup`, {
       fullName,
       email,
       password,

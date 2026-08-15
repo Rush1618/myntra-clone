@@ -2,7 +2,8 @@ import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 import axios from "axios";
 
-const API_BASE_URL = "http://192.168.0.114:5000";
+import { API_BASE_URL } from "@/constants/Api";
+
 
 /**
  * Configure how notifications appear when the app is in the foreground.

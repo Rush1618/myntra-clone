@@ -1,9 +1,9 @@
 import * as SecureStore from "expo-secure-store";
-import { Platform } from "react-native";
+import { Platform, Dimensions } from "react-native";
 import axios from "axios";
 
+import { API_BASE_URL } from "@/constants/Api";
 const STORAGE_KEY = "recentlyViewed";
-const API_BASE_URL = "http://192.168.0.114:5000";
 const MAX_RECENTLY_VIEWED = 20;
 
 export type RecentlyViewedProduct = {

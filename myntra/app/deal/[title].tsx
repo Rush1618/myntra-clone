@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIn
 import { useAppTheme } from "@/theme/ThemeProvider";
 import axios from "axios";
 import { ArrowLeft } from "lucide-react-native";
+import { API_BASE_URL } from "@/constants/Api";
 
 export default function DealPage() {
   const { title } = useLocalSearchParams();
@@ -19,7 +20,7 @@ export default function DealPage() {
   const fetchDeals = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://192.168.0.114:5000/product");
+      const res = await axios.get(`${API_BASE_URL}/product`);
       let allProducts = res.data;
       
       if (title === "Under ₹599") {

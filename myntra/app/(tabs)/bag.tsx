@@ -15,7 +15,7 @@ import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 import { useAppTheme } from "@/theme/ThemeProvider";
 
-const API_BASE = "http://192.168.0.114:5000";
+import { API_BASE_URL } from "@/constants/Api";
 
 type BagItem = {
   _id: string;
@@ -51,7 +51,7 @@ export default function Bag() {
     if (!user?._id) return;
     setIsLoading(true);
     try {
-      const { data } = await axios.get(`${API_BASE}/bag/${user._id}`);
+      const { data } = await axios.get(`${API_BASE_URL}/bag/${user._id}`);
       // New response shape: { activeItems, savedItems }
       if (data?.activeItems !== undefined) {
         setActiveItems(data.activeItems);
@@ -70,7 +70,7 @@ export default function Bag() {
 
   const handleDelete = async (itemId: string) => {
     try {
-      await axios.delete(`${API_BASE}/bag/${itemId}`);
+      await axios.delete(`${API_BASE_URL}/bag/${itemId}`);
       setActiveItems((p) => p.filter((i) => i._id !== itemId));
       setSavedItems((p) => p.filter((i) => i._id !== itemId));
     } catch (err) {
@@ -80,7 +80,7 @@ export default function Bag() {
 
   const handleSaveForLater = async (item: BagItem) => {
     try {
-      await axios.patch(`${API_BASE}/bag/${item._id}/save-for-later`);
+      await axios.patch(`${API_BASE_URL}/bag/${item._id}/save-for-later`);
       setActiveItems((p) => p.filter((i) => i._id !== item._id));
       setSavedItems((p) => [...p, { ...item, savedForLater: true }]);
     } catch (err) {
@@ -90,7 +90,7 @@ export default function Bag() {
 
   const handleMoveToBag = async (item: BagItem) => {
     try {
-      const { data } = await axios.patch(`${API_BASE}/bag/${item._id}/move-to-bag`);
+      const { data } = await axios.patch(`${API_BASE_URL}/bag/${item._id}/move-to-bag`);
       setSavedItems((p) => p.filter((i) => i._id !== item._id));
       setActiveItems((p) => [...p, data.item ?? { ...item, savedForLater: false }]);
       if (data.priceChanged) {
@@ -108,7 +108,7 @@ export default function Bag() {
     const newQty = item.quantity + delta;
     if (newQty < 1) return;
     try {
-      await axios.patch(`${API_BASE}/bag/${item._id}/quantity`, { quantity: newQty });
+      await axios.patch(`${API_BASE_URL}/bag/${item._id}/quantity`, { quantity: newQty });
       setActiveItems((p) =>
         p.map((i) => (i._id === item._id ? { ...i, quantity: newQty } : i))
       );

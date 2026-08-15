@@ -18,6 +18,7 @@ import { useAppTheme } from "@/theme/ThemeProvider";
 import axios from "axios";
 import { recordRecentlyViewed } from "@/utils/recentlyViewed";
 import { RecommendationCarousel } from "@/components/RecommendationCarousel";
+import { API_BASE_URL } from "@/constants/Api";
 
 // Mock product data - in a real app, this would come from an API
 // const products = {
@@ -104,7 +105,7 @@ export default function ProductDetails() {
       try {
         setIsLoading(true);
         const product = await axios.get(
-          `http://192.168.0.114:5000/product/${id}`
+          `${API_BASE_URL}/product/${id}`
         );
         setproduct(product.data);
       } catch (error) {
@@ -177,7 +178,7 @@ export default function ProductDetails() {
         setiswishlist(false);
         Alert.alert("Wishlist", "Removed from wishlist");
       } else {
-        await axios.post(`http://192.168.0.114:5000/wishlist`, {
+        await axios.post(`${API_BASE_URL}/wishlist`, {
           userId: user._id,
           productId: id,
         });
@@ -204,7 +205,7 @@ export default function ProductDetails() {
     }
     try {
       setLoading(true);
-      await axios.post(`http://192.168.0.114:5000/bag`, {
+      await axios.post(`${API_BASE_URL}/bag`, {
         userId: user._id,
         productId: id,
         size: selectedSize,
