@@ -6,298 +6,344 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { ShoppingBag, Minus, Plus, Trash2 } from "lucide-react-native";
+import { ShoppingBag, Minus, Plus, Trash2, Bookmark, ShoppingCart } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
+import { useAppTheme } from "@/theme/ThemeProvider";
 
-const bagItems = [
-  {
-    id: 1,
-    name: "White Cotton T-Shirt",
-    brand: "H&M",
-    size: "L",
-    price: 799,
-    quantity: 1,
-    image:
-      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop",
-  },
-  {
-    id: 2,
-    name: "Blue Denim Jacket",
-    brand: "Levis",
-    size: "M",
-    price: 2999,
-    quantity: 1,
-    image:
-      "https://images.unsplash.com/photo-1523205771623-e0faa4d2813d?w=500&auto=format&fit=crop",
-  },
-];
+const API_BASE = "http://192.168.0.114:5000";
+
+type BagItem = {
+  _id: string;
+  productId: {
+    _id: string;
+    name: string;
+    brand: string;
+    price: number;
+    images: string[];
+  };
+  size: string;
+  quantity: number;
+  savedForLater: boolean;
+  priceSnapshot?: number;
+  priceChanged?: boolean;
+  currentPrice?: number;
+};
 
 export default function Bag() {
   const router = useRouter();
-
-  const [isLoading, setIsLoading] = useState(false);
+  const { colors } = useAppTheme();
   const { user } = useAuth();
-  const [bag, setbag] = useState<any>(null);
-  useEffect(() => {
-    // Simulate loading time
 
-    
-    fetchproduct();
+  const [activeItems, setActiveItems] = useState<BagItem[]>([]);
+  const [savedItems, setSavedItems] = useState<BagItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    void fetchBag();
   }, [user]);
-  const fetchproduct = async () => {
-    if (user) {
-      try {
-        setIsLoading(true);
-        const bag = await axios.get(
-          `https://myntra-clone-xj36.onrender.com/bag/${user._id}`
+
+  const fetchBag = async () => {
+    if (!user?._id) return;
+    setIsLoading(true);
+    try {
+      const { data } = await axios.get(`${API_BASE}/bag/${user._id}`);
+      // New response shape: { activeItems, savedItems }
+      if (data?.activeItems !== undefined) {
+        setActiveItems(data.activeItems);
+        setSavedItems(data.savedItems);
+      } else if (Array.isArray(data)) {
+        // Backward compat: old flat array (all active)
+        setActiveItems(data.filter((i: BagItem) => !i.savedForLater));
+        setSavedItems(data.filter((i: BagItem) => i.savedForLater));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (itemId: string) => {
+    try {
+      await axios.delete(`${API_BASE}/bag/${itemId}`);
+      setActiveItems((p) => p.filter((i) => i._id !== itemId));
+      setSavedItems((p) => p.filter((i) => i._id !== itemId));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSaveForLater = async (item: BagItem) => {
+    try {
+      await axios.patch(`${API_BASE}/bag/${item._id}/save-for-later`);
+      setActiveItems((p) => p.filter((i) => i._id !== item._id));
+      setSavedItems((p) => [...p, { ...item, savedForLater: true }]);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleMoveToBag = async (item: BagItem) => {
+    try {
+      const { data } = await axios.patch(`${API_BASE}/bag/${item._id}/move-to-bag`);
+      setSavedItems((p) => p.filter((i) => i._id !== item._id));
+      setActiveItems((p) => [...p, data.item ?? { ...item, savedForLater: false }]);
+      if (data.priceChanged) {
+        Alert.alert(
+          "Price Changed",
+          `This item's price changed from ₹${item.priceSnapshot} to ₹${data.currentPrice}.`
         );
-        setbag(bag.data);
-      } catch (error) {
-        console.log(error);
-        setIsLoading(false);
-      } finally {
-        setIsLoading(false);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleQuantityChange = async (item: BagItem, delta: number) => {
+    const newQty = item.quantity + delta;
+    if (newQty < 1) return;
+    try {
+      await axios.patch(`${API_BASE}/bag/${item._id}/quantity`, { quantity: newQty });
+      setActiveItems((p) =>
+        p.map((i) => (i._id === item._id ? { ...i, quantity: newQty } : i))
+      );
+    } catch (err: any) {
+      if (err.response?.status === 409) {
+        Alert.alert("Sync Conflict", "Quantity was updated from another device. Refreshing...");
+        void fetchBag();
       }
     }
   };
+
+  const total = activeItems.reduce(
+    (sum, item) => sum + (item.currentPrice ?? item.productId.price) * item.quantity,
+    0
+  );
+
   if (!user) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Shopping Bag</Text>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Shopping Bag</Text>
         </View>
         <View style={styles.emptyState}>
-          <ShoppingBag size={64} color="#ff3f6c" />
-          <Text style={styles.emptyTitle}>Please login to view your bag</Text>
+          <ShoppingBag size={64} color={colors.primary} />
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>Please login to view your bag</Text>
           <TouchableOpacity
-            style={styles.loginButton}
+            style={[styles.loginButton, { backgroundColor: colors.primary }]}
             onPress={() => router.push("/login")}
           >
-            <Text style={styles.loginButtonText}>LOGIN</Text>
+            <Text style={[styles.loginButtonText, { color: colors.primaryText }]}>LOGIN</Text>
           </TouchableOpacity>
         </View>
       </View>
     );
   }
+
   if (isLoading) {
     return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#ff3f6c" />
+      <View style={[styles.loaderContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
-  const total = bag?.reduce(
-    (sum: any, item: any) => sum + item.productId.price * item.quantity,
-    0
-  );
-  const handledelete=async(itemid:any)=>{
-    try {
-      await axios.delete(`https://myntra-clone-xj36.onrender.com/bag/${itemid}`)
-      fetchproduct();
-    } catch (error) {
-      console.log(error)
-    }
-   
-  }
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Shopping Bag</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Shopping Bag</Text>
+        {activeItems.length > 0 && (
+          <Text style={[styles.headerCount, { color: colors.textMuted }]}>
+            {activeItems.length} item{activeItems.length !== 1 ? "s" : ""}
+          </Text>
+        )}
       </View>
 
       <ScrollView style={styles.content}>
-        {bag?.map((item: any) => (
-          <View key={item._id} style={styles.bagItem}>
-            <Image
-              source={{ uri: item.productId.images[0] }}
-              style={styles.itemImage}
-            />
-            <View style={styles.itemInfo}>
-              <Text style={styles.brandName}>{item.productId.brand}</Text>
-              <Text style={styles.itemName}>{item.productId.name}</Text>
-              <Text style={styles.itemSize}>Size: {item.size}</Text>
-              <Text style={styles.itemPrice}>₹{item.productId.price}</Text>
+        {/* ── Active Cart Items ── */}
+        {activeItems.length === 0 ? (
+          <View style={styles.emptySection}>
+            <ShoppingBag size={48} color={colors.textMuted} />
+            <Text style={[styles.emptyText, { color: colors.textMuted }]}>Your bag is empty</Text>
+          </View>
+        ) : (
+          activeItems.map((item) => (
+            <View key={item._id} style={[styles.bagItem, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+              {/* Price change warning banner */}
+              {item.priceChanged && (
+                <View style={[styles.priceBanner, { backgroundColor: "#FEF3C7" }]}>
+                  <Text style={{ fontSize: 12, color: "#92400E", fontWeight: "600" }}>
+                    ⚠️ Price changed from ₹{item.priceSnapshot} → ₹{item.currentPrice}
+                  </Text>
+                </View>
+              )}
+              <Image source={{ uri: item.productId?.images?.[0] }} style={styles.itemImage} />
+              <View style={styles.itemInfo}>
+                <Text style={[styles.brandName, { color: colors.textMuted }]}>{item.productId.brand}</Text>
+                <Text style={[styles.itemName, { color: colors.text }]}>{item.productId.name}</Text>
+                <Text style={[styles.itemSize, { color: colors.textMuted }]}>Size: {item.size}</Text>
+                <Text style={[styles.itemPrice, { color: colors.text }]}>
+                  ₹{item.currentPrice ?? item.productId.price}
+                </Text>
 
-              <View style={styles.quantityContainer}>
-                <TouchableOpacity style={styles.quantityButton}>
-                  <Minus size={20} color="#3e3e3e" />
-                </TouchableOpacity>
-                <Text style={styles.quantity}>{item.quantity}</Text>
-                <TouchableOpacity style={styles.quantityButton}>
-                  <Plus size={20} color="#3e3e3e" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.removeButton} onPress={()=>handledelete(item._id)}>
-                  <Trash2 size={20} color="#ff3f6c" />
-                </TouchableOpacity>
+                <View style={styles.quantityContainer}>
+                  <TouchableOpacity
+                    style={[styles.quantityButton, { backgroundColor: colors.surfaceMuted }]}
+                    onPress={() => void handleQuantityChange(item, -1)}
+                  >
+                    <Minus size={18} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                  <Text style={[styles.quantity, { color: colors.text }]}>{item.quantity}</Text>
+                  <TouchableOpacity
+                    style={[styles.quantityButton, { backgroundColor: colors.surfaceMuted }]}
+                    onPress={() => void handleQuantityChange(item, 1)}
+                  >
+                    <Plus size={18} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.actionRow}>
+                  <TouchableOpacity
+                    style={styles.actionBtn}
+                    onPress={() => void handleSaveForLater(item)}
+                  >
+                    <Bookmark size={14} color={colors.primary} />
+                    <Text style={[styles.actionText, { color: colors.primary }]}>Save for Later</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.actionBtn}
+                    onPress={() => void handleDelete(item._id)}
+                  >
+                    <Trash2 size={14} color={colors.danger} />
+                    <Text style={[styles.actionText, { color: colors.danger }]}>Remove</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
-          </View>
-        ))}
+          ))
+        )}
+
+        {/* ── Saved for Later ── */}
+        {savedItems.length > 0 && (
+          <>
+            <Text style={[styles.sectionTitle, { color: colors.text, borderBottomColor: colors.border }]}>
+              Saved for Later ({savedItems.length})
+            </Text>
+            {savedItems.map((item) => (
+              <View
+                key={item._id}
+                style={[styles.bagItem, styles.savedItem, { backgroundColor: colors.surfaceMuted, shadowColor: colors.shadow }]}
+              >
+                <Image source={{ uri: item.productId?.images?.[0] }} style={styles.itemImage} />
+                <View style={styles.itemInfo}>
+                  <Text style={[styles.brandName, { color: colors.textMuted }]}>{item.productId.brand}</Text>
+                  <Text style={[styles.itemName, { color: colors.text }]}>{item.productId.name}</Text>
+                  <Text style={[styles.itemSize, { color: colors.textMuted }]}>Size: {item.size}</Text>
+                  <Text style={[styles.itemPrice, { color: colors.text }]}>₹{item.productId.price}</Text>
+
+                  <View style={styles.actionRow}>
+                    <TouchableOpacity
+                      style={styles.actionBtn}
+                      onPress={() => void handleMoveToBag(item)}
+                    >
+                      <ShoppingCart size={14} color={colors.primary} />
+                      <Text style={[styles.actionText, { color: colors.primary }]}>Move to Bag</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.actionBtn}
+                      onPress={() => void handleDelete(item._id)}
+                    >
+                      <Trash2 size={14} color={colors.danger} />
+                      <Text style={[styles.actionText, { color: colors.danger }]}>Remove</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </>
+        )}
       </ScrollView>
 
-      <View style={styles.footer}>
-        <View style={styles.totalContainer}>
-          <Text style={styles.totalLabel}>Total Amount</Text>
-          <Text style={styles.totalAmount}>₹{total}</Text>
+      {/* ── Footer ── */}
+      {activeItems.length > 0 && (
+        <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+          <View style={styles.totalContainer}>
+            <Text style={[styles.totalLabel, { color: colors.text }]}>Total Amount</Text>
+            <Text style={[styles.totalAmount, { color: colors.text }]}>₹{total.toFixed(2)}</Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.checkoutButton, { backgroundColor: colors.primary }]}
+            onPress={() => router.push("/checkout")}
+          >
+            <Text style={[styles.checkoutButtonText, { color: colors.primaryText }]}>PLACE ORDER</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={styles.checkoutButton}
-          onPress={() => router.push("/checkout")}
-        >
-          <Text style={styles.checkoutButtonText}>PLACE ORDER</Text>
-        </TouchableOpacity>
-      </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  loaderContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
-  },
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
+  loaderContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+  container: { flex: 1 },
   header: {
     padding: 15,
     paddingTop: 50,
-    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 8,
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#3e3e3e",
-  },
-  content: {
-    flex: 1,
-    padding: 15,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    color: "#3e3e3e",
+  headerTitle: { fontSize: 24, fontWeight: "bold" },
+  headerCount: { fontSize: 14 },
+  content: { flex: 1, padding: 15 },
+  emptyState: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20, paddingTop: 80 },
+  emptySection: { alignItems: "center", paddingTop: 60, gap: 12 },
+  emptyTitle: { fontSize: 18, marginTop: 20, marginBottom: 20 },
+  emptyText: { fontSize: 16 },
+  loginButton: { paddingHorizontal: 40, paddingVertical: 15, borderRadius: 10 },
+  loginButtonText: { fontSize: 16, fontWeight: "bold" },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: "700",
     marginTop: 20,
-    marginBottom: 20,
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
   },
-  loginButton: {
-    backgroundColor: "#ff3f6c",
-    paddingHorizontal: 40,
-    paddingVertical: 15,
-    borderRadius: 10,
-  },
-  loginButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
+  priceBanner: { paddingHorizontal: 10, paddingVertical: 6 },
   bagItem: {
     flexDirection: "row",
-    backgroundColor: "#fff",
     borderRadius: 10,
     marginBottom: 15,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
     overflow: "hidden",
   },
-  itemImage: {
-    width: 100,
-    height: 120,
-  },
-  itemInfo: {
-    flex: 1,
-    padding: 15,
-  },
-  brandName: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 5,
-  },
-  itemName: {
-    fontSize: 16,
-    color: "#3e3e3e",
-    marginBottom: 5,
-  },
-  itemSize: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 5,
-  },
-  itemPrice: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#3e3e3e",
-    marginBottom: 10,
-  },
-  quantityContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  quantityButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#f5f5f5",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  quantity: {
-    marginHorizontal: 15,
-    fontSize: 16,
-  },
-  removeButton: {
-    marginLeft: "auto",
-  },
-  footer: {
-    padding: 15,
-    backgroundColor: "#fff",
-    borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
-  },
-  totalContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 15,
-  },
-  totalLabel: {
-    fontSize: 16,
-    color: "#3e3e3e",
-  },
-  totalAmount: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#3e3e3e",
-  },
-  checkoutButton: {
-    backgroundColor: "#ff3f6c",
-    padding: 15,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  checkoutButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
+  savedItem: { opacity: 0.85 },
+  itemImage: { width: 100, height: 120 },
+  itemInfo: { flex: 1, padding: 12 },
+  brandName: { fontSize: 13, marginBottom: 3 },
+  itemName: { fontSize: 15, marginBottom: 3 },
+  itemSize: { fontSize: 13, marginBottom: 4 },
+  itemPrice: { fontSize: 16, fontWeight: "bold", marginBottom: 8 },
+  quantityContainer: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
+  quantityButton: { width: 28, height: 28, borderRadius: 14, justifyContent: "center", alignItems: "center" },
+  quantity: { marginHorizontal: 12, fontSize: 15 },
+  actionRow: { flexDirection: "row", gap: 16 },
+  actionBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
+  actionText: { fontSize: 12, fontWeight: "600" },
+  footer: { padding: 15, borderTopWidth: 1 },
+  totalContainer: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 15 },
+  totalLabel: { fontSize: 16 },
+  totalAmount: { fontSize: 18, fontWeight: "bold" },
+  checkoutButton: { padding: 15, borderRadius: 10, alignItems: "center" },
+  checkoutButtonText: { fontSize: 16, fontWeight: "bold" },
 });

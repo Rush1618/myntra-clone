@@ -17,10 +17,14 @@ import {
   Clock,
   Calendar,
   CreditCard,
+  Download,
+  FileText
 } from "lucide-react-native";
 import React from "react";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
+import { useAppTheme } from "@/theme/ThemeProvider";
+import { Linking } from "react-native";
 
 const orders = [
   {
@@ -135,111 +139,136 @@ export default function Orders() {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
-  const [orders, setorder] = useState<any>(null);
+  const { colors } = useAppTheme();
+  const [fetchedOrders, setFetchedOrders] = useState<any>(null);
   useEffect(() => {
     // Simulate loading time
     const fetchorder = async () => {
       if (user) {
         try {
           setIsLoading(true);
-          const product = await axios.get(
-            `https://myntra-clone-xj36.onrender.com/order/user/${user._id}`
+          const response = await axios.get(
+            `http://192.168.0.114:5000/order/user/${user._id}`
           );
-          setorder(product.data);
+          if (Array.isArray(response.data)) {
+            setFetchedOrders(response.data);
+          }
         } catch (error) {
           console.log(error);
-          setIsLoading(false);
         } finally {
           setIsLoading(false);
         }
+      } else {
+        setIsLoading(false);
       }
     };
     fetchorder();
-  }, []);
+  }, [user]);
    if (isLoading) {
       return (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color="#ff3f6c" />
+        <View style={[styles.loaderContainer, { backgroundColor: colors.background }]}>
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       );
     }
   const toggleOrderDetails = (orderId: string) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
   };
-  if (!orders) {
+  const displayOrders = (Array.isArray(fetchedOrders) && fetchedOrders.length > 0) ? fetchedOrders : orders;
+
+  if (!displayOrders || !Array.isArray(displayOrders)) {
     return (
-      <View style={styles.container}>
-        <Text>Order not found</Text>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Text style={{ color: colors.text }}>Order not found</Text>
       </View>
     );
   }
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Orders</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>My Orders</Text>
+        <TouchableOpacity
+          style={{ flexDirection: "row", alignItems: "center", gap: 5, padding: 8, backgroundColor: colors.surface, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}
+          onPress={() => user && Linking.openURL(`http://192.168.0.114:5000/Order/export/csv/${user._id}`)}
+        >
+          <Download size={16} color={colors.text} />
+          <Text style={{ fontSize: 12, fontWeight: "600", color: colors.text }}>Export CSV</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content}>
-        {orders.map((order:any) => (
-          <View key={order._id} style={styles.orderCard}>
+        {displayOrders.map((order:any) => (
+          <View key={order._id} style={[styles.orderCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
             <TouchableOpacity
-              style={styles.orderHeader}
+              style={[styles.orderHeader, { borderBottomColor: colors.border }]}
               onPress={() => toggleOrderDetails(order._id)}
             >
               <View>
-                <Text style={styles.orderId}>Order #{order._id}</Text>
-                <Text style={styles.orderDate}>{order.date}</Text>
+                <Text style={[styles.orderId, { color: colors.text }]}>Order #{order._id}</Text>
+                <Text style={[styles.orderDate, { color: colors.textMuted }]}>{order.date}</Text>
               </View>
-              <View style={styles.statusContainer}>
-                <Package size={16} color="#00b852" />
-                <Text style={styles.orderStatus}>{order.status}</Text>
+              <View style={[styles.statusContainer, { backgroundColor: colors.primary + '20' }]}>
+                <Package size={16} color={colors.primary} />
+                <Text style={[styles.orderStatus, { color: colors.primary }]}>{order.status}</Text>
               </View>
             </TouchableOpacity>
 
             <View style={styles.itemsContainer}>
-              {order.items.map((item:any) => (
-                <View key={item._id} style={styles.orderItem}>
-                  <Image
-                    source={{ uri: item.productId.images }}
-                    style={styles.itemImage}
-                  />
-                  <View style={styles.itemInfo}>
-                    <Text style={styles.brandName}>{item.productId.brand}</Text>
-                    <Text style={styles.itemName}>{item.productId.name}</Text>
-                    <Text style={styles.itemPrice}>₹{item.productId.price}</Text>
+              {order.items.map((item:any, index: number) => {
+                const productInfo = item.productId || item;
+                const imageUri = Array.isArray(productInfo.images) ? productInfo.images?.[0] : (productInfo.image || productInfo.images);
+                return (
+                  <View key={item._id || index} style={styles.orderItem}>
+                    <Image
+                      source={{ uri: imageUri }}
+                      style={styles.itemImage}
+                    />
+                    <View style={styles.itemInfo}>
+                      <Text style={[styles.brandName, { color: colors.textMuted }]}>{productInfo.brand}</Text>
+                      <Text style={[styles.itemName, { color: colors.text }]}>{productInfo.name}</Text>
+                      <Text style={[styles.itemPrice, { color: colors.text }]}>₹{productInfo.price}</Text>
+                    </View>
                   </View>
-                </View>
-              ))}
+                );
+              })}
             </View>
 
             {expandedOrder === order._id && (
-              <View style={styles.orderDetails}>
+              <View style={[styles.orderDetails, { borderTopColor: colors.border }]}>
                 <View style={styles.detailSection}>
                   <View style={styles.detailHeader}>
-                    <MapPin size={20} color="#3e3e3e" />
-                    <Text style={styles.detailTitle}>Shipping Address</Text>
+                    <MapPin size={20} color={colors.text} />
+                    <Text style={[styles.detailTitle, { color: colors.text }]}>Shipping Address</Text>
                   </View>
-                  <Text style={styles.detailText}>{order.shippingAddress}</Text>
+                  <Text style={[styles.detailText, { color: colors.textMuted }]}>{order.shippingAddress}</Text>
                 </View>
 
                 <View style={styles.detailSection}>
                   <View style={styles.detailHeader}>
-                    <CreditCard size={20} color="#3e3e3e" />
-                    <Text style={styles.detailTitle}>Payment Method</Text>
+                    <CreditCard size={20} color={colors.text} />
+                    <Text style={[styles.detailTitle, { color: colors.text }]}>Payment Method</Text>
                   </View>
-                  <Text style={styles.detailText}>{order.paymentMethod}</Text>
+                  <Text style={[styles.detailText, { color: colors.textMuted }]}>{order.paymentMethod}</Text>
+                  
+                  <TouchableOpacity
+                    style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 10 }}
+                    onPress={() => Linking.openURL(`http://192.168.0.114:5000/Order/receipt/${order._id}`)}
+                  >
+                    <FileText size={16} color={colors.primary} />
+                    <Text style={{ color: colors.primary, fontWeight: "600" }}>Download PDF Receipt</Text>
+                  </TouchableOpacity>
                 </View>
 
                 <View style={styles.detailSection}>
                   <View style={styles.detailHeader}>
-                    <Truck size={20} color="#3e3e3e" />
-                    <Text style={styles.detailTitle}>Tracking Information</Text>
+                    <Truck size={20} color={colors.text} />
+                    <Text style={[styles.detailTitle, { color: colors.text }]}>Tracking Information</Text>
                   </View>
                   <View style={styles.trackingInfo}>
-                    <Text style={styles.trackingNumber}>
+                    <Text style={[styles.trackingNumber, { color: colors.textMuted }]}>
                       Tracking Number: {order.tracking.number}
                     </Text>
-                    <Text style={styles.trackingCarrier}>
+                    <Text style={[styles.trackingCarrier, { color: colors.textMuted }]}>
                       Carrier: {order.tracking.carrier}
                     </Text>
                   </View>
@@ -247,20 +276,20 @@ export default function Orders() {
                   <View style={styles.timeline}>
                     {order.tracking.timeline.map((event:any, index:any) => (
                       <View key={index} style={styles.timelineEvent}>
-                        <View style={styles.timelinePoint} />
+                        <View style={[styles.timelinePoint, { backgroundColor: colors.primary }]} />
                         <View style={styles.timelineContent}>
-                          <Text style={styles.timelineStatus}>
+                          <Text style={[styles.timelineStatus, { color: colors.text }]}>
                             {event.status}
                           </Text>
-                          <Text style={styles.timelineLocation}>
+                          <Text style={[styles.timelineLocation, { color: colors.textMuted }]}>
                             {event.location}
                           </Text>
-                          <Text style={styles.timelineTimestamp}>
+                          <Text style={[styles.timelineTimestamp, { color: colors.textMuted }]}>
                             {event.timestamp}
                           </Text>
                         </View>
                         {index !== order.tracking.timeline.length - 1 && (
-                          <View style={styles.timelineLine} />
+                          <View style={[styles.timelineLine, { backgroundColor: colors.border }]} />
                         )}
                       </View>
                     ))}
@@ -269,19 +298,19 @@ export default function Orders() {
               </View>
             )}
 
-            <View style={styles.orderFooter}>
+            <View style={[styles.orderFooter, { borderTopColor: colors.border }]}>
               <View style={styles.totalContainer}>
-                <Text style={styles.totalLabel}>Order Total</Text>
-                <Text style={styles.totalAmount}>₹{order.total}</Text>
+                <Text style={[styles.totalLabel, { color: colors.textMuted }]}>Order Total</Text>
+                <Text style={[styles.totalAmount, { color: colors.text }]}>₹{order.total}</Text>
               </View>
               <TouchableOpacity
                 style={styles.detailsButton}
                 onPress={() => toggleOrderDetails(order._id)}
               >
-                <Text style={styles.detailsButtonText}>
+                <Text style={[styles.detailsButtonText, { color: colors.primary }]}>
                   {expandedOrder === order._id ? "Hide Details" : "View Details"}
                 </Text>
-                <ChevronRight size={20} color="#ff3f6c" />
+                <ChevronRight size={20} color={colors.primary} />
               </TouchableOpacity>
             </View>
           </View>

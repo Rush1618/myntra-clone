@@ -11,7 +11,12 @@ import { useRouter } from "expo-router";
 import { Search, ChevronRight } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useFocusEffect } from "@react-navigation/native";
+import { fetchRecentlyViewed, getLocalRecentlyViewed } from "@/utils/recentlyViewed";
 import axios from "axios";
+import { useAppTheme } from "@/theme/ThemeProvider";
+import { RecommendationCarousel } from "@/components/RecommendationCarousel";
+import { fetchWithCache } from "@/utils/apiCache";
 
 // const categories = [
 //   {
@@ -96,25 +101,23 @@ const deals = [
 
 export default function Home() {
   const router = useRouter();
+  const { colors } = useAppTheme();
   const [isLoading, setIsLoading] = useState(false);
   const [product, setproduct] = useState<any>(null);
   const [categories, setcategories] = useState<any>(null);
+  const [recentlyViewed, setRecentlyViewed] = useState<any[]>([]);
   const { user } = useAuth();
   const handleProductPress = (productId: number) => {
-    if (!user) {
-      router.push("/login");
-    } else {
-      router.push(`/product/${productId}`);
-    }
+    router.push(`/product/${productId}`);
   };
   useEffect(() => {
     const fetchproduct = async () => {
       try {
         setIsLoading(true);
-        const cat = await axios.get("https://myntra-clone-xj36.onrender.com/category");
-        const product = await axios.get("https://myntra-clone-xj36.onrender.com/product");
-        setcategories(cat.data);
-        setproduct(product.data);
+        const catData = await fetchWithCache("http://192.168.0.114:5000/category");
+        const prodData = await fetchWithCache("http://192.168.0.114:5000/product");
+        setcategories(catData);
+        setproduct(prodData);
       } catch (error) {
         console.log(error);
         setIsLoading(false);
@@ -124,12 +127,45 @@ export default function Home() {
     };
     fetchproduct();
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      let isActive = true;
+
+      const loadRecentlyViewed = async () => {
+        let local = await fetchRecentlyViewed(user?._id);
+        
+        // Pad to 20 products max and min
+        if (local.length < 20) {
+          try {
+            const res = await axios.get("http://192.168.0.114:5000/product");
+            const allProducts = res.data;
+            const localIds = new Set(local.map((item: any) => item._id));
+            const padding = allProducts.filter((p: any) => !localIds.has(p._id));
+            local = [...local, ...padding].slice(0, 20);
+          } catch (e) {
+            console.error("Failed to fetch padding products", e);
+          }
+        }
+
+        if (isActive) {
+          setRecentlyViewed(local.slice(0, 20));
+        }
+      };
+
+      void loadRecentlyViewed();
+
+      return () => {
+        isActive = false;
+      };
+    }, [user?._id])
+  );
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.logo}>MYNTRA</Text>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <Text style={[styles.logo, { color: colors.text }]}>MYNTRA</Text>
         <TouchableOpacity style={styles.searchButton}>
-          <Search size={24} color="#3e3e3e" />
+          <Search size={24} color={colors.icon} />
         </TouchableOpacity>
       </View>
 
@@ -142,10 +178,10 @@ export default function Home() {
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>SHOP BY CATEGORY</Text>
-          <TouchableOpacity style={styles.viewAll}>
-            <Text style={styles.viewAllText}>View All</Text>
-            <ChevronRight size={20} color="#ff3f6c" />
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>SHOP BY CATEGORY</Text>
+          <TouchableOpacity style={styles.viewAll} onPress={() => router.navigate("/(tabs)/categories")}>
+            <Text style={[styles.viewAllText, { color: colors.primary }]}>View All</Text>
+            <ChevronRight size={20} color={colors.primary} />
           </TouchableOpacity>
         </View>
         <ScrollView
@@ -156,19 +192,23 @@ export default function Home() {
           {isLoading ? (
             <ActivityIndicator
               size="large"
-              color="#ff3f6c"
+              color={colors.primary}
               style={styles.loader}
             />
           ) : !categories || categories.length === 0 ? (
-            <Text style={styles.emptyText}>No categories available</Text>
+            <Text style={[styles.emptyText, { color: colors.textMuted }]}>No categories available</Text>
           ) : (
             categories.map((category: any) => (
-              <TouchableOpacity key={category._id} style={styles.categoryCard}>
+              <TouchableOpacity 
+                key={category._id} 
+                style={[styles.categoryCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}
+                onPress={() => router.navigate("/(tabs)/categories")}
+              >
                 <Image
                   source={{ uri: category.image }}
                   style={styles.categoryImage}
                 />
-                <Text style={styles.categoryName}>{category.name}</Text>
+                <Text style={[styles.categoryName, { color: colors.text }]}>{category.name}</Text>
               </TouchableOpacity>
             ))
           )}
@@ -177,7 +217,7 @@ export default function Home() {
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>DEALS OF THE DAY</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>DEALS OF THE DAY</Text>
         </View>
         <ScrollView
           horizontal
@@ -185,7 +225,11 @@ export default function Home() {
           style={styles.dealsScroll}
         >
           {deals.map((deal) => (
-            <TouchableOpacity key={deal.id} style={styles.dealCard}>
+            <TouchableOpacity 
+              key={deal.id} 
+              style={styles.dealCard}
+              onPress={() => router.push(`/deal/${encodeURIComponent(deal.title)}`)}
+            >
               <Image source={{ uri: deal.image }} style={styles.dealImage} />
               <View style={styles.dealOverlay}>
                 <Text style={styles.dealTitle}>{deal.title}</Text>
@@ -197,23 +241,23 @@ export default function Home() {
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>TRENDING NOW</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>TRENDING NOW</Text>
         </View>
         <View style={styles.productsGrid}>
           {isLoading ? (
             <ActivityIndicator
               size="large"
-              color="#ff3f6c"
+              color={colors.primary}
               style={styles.loader}
             />
           ) : !product || product.length === 0 ? (
-            <Text style={styles.emptyText}>No Product available</Text>
+            <Text style={[styles.emptyText, { color: colors.textMuted }]}>No Product available</Text>
           ) : ( 
             <View style={styles.productsGrid}>
               {product.map((product: any) => (
                 <TouchableOpacity
                   key={product._id}
-                  style={styles.productCard}
+                  style={[styles.productCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}
                   onPress={() => handleProductPress(product._id)}
                 >
                   <Image
@@ -223,11 +267,13 @@ export default function Home() {
                     style={styles.productImage}
                   />
                   <View style={styles.productInfo}>
-                    <Text style={styles.brandName}>{product.brand}</Text>
-                    <Text style={styles.productName}>{product.name}</Text>
+                      <Text style={[styles.brandName, { color: colors.textMuted }]}>{product.brand}</Text>
+                      <Text style={[styles.productName, { color: colors.text }]}>{product.name}</Text>
                     <View style={styles.priceRow}>
-                      <Text style={styles.productPrice}>{product.price}</Text>
-                      <Text style={styles.discount}>{product.discount}</Text>
+                        <Text style={[styles.productPrice, { color: colors.text }]}>₹{product.price}</Text>
+                        {product.discount ? (
+                          <Text style={[styles.discount, { color: colors.primary }]}>{product.discount}% OFF</Text>
+                        ) : null}
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -236,6 +282,51 @@ export default function Home() {
           )}
         </View>
       </View>
+
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>RECENTLY VIEWED</Text>
+          <TouchableOpacity
+            style={styles.viewAll}
+            onPress={() => router.push("/recently-viewed")}
+          >
+              <Text style={[styles.viewAllText, { color: colors.primary }]}>View All</Text>
+              <ChevronRight size={20} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {recentlyViewed.length === 0 ? (
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>No recently viewed items yet</Text>
+          ) : (
+            recentlyViewed.slice(0, 20).map((item) => (
+              <TouchableOpacity
+                key={item._id}
+                  style={[styles.recentCard, { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: colors.shadow }]}
+                onPress={() => router.push(`/product/${item._id}`)}
+              >
+                <Image
+                  source={{ uri: item.images?.[0] }}
+                  style={styles.recentImage}
+                />
+                  <Text style={[styles.brandName, { color: colors.textMuted }]}>{item.brand}</Text>
+                  <Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
+                  {item.name}
+                </Text>
+                  <Text style={[styles.productPrice, { color: colors.text }]}>₹{item.price}</Text>
+              </TouchableOpacity>
+            ))
+          )}
+        </ScrollView>
+      </View>
+
+      {/* ── Personalized Recommendations ── */}
+      {user?._id && (
+        <RecommendationCarousel
+          userId={user._id}
+          excludeIds={recentlyViewed.map((i: any) => i._id)}
+          title="Recommended for You"
+        />
+      )}
     </ScrollView>
   );
 }
@@ -287,6 +378,21 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "#3e3e3e",
+  },
+  recentCard: {
+    width: 150,
+    marginRight: 12,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
+  },
+  recentImage: {
+    width: "100%",
+    height: 180,
+    borderRadius: 10,
+    marginBottom: 8,
   },
   viewAll: {
     flexDirection: "row",

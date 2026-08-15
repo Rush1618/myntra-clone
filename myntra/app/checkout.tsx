@@ -12,10 +12,12 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
+import { useAppTheme } from "@/theme/ThemeProvider";
 
 export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { colors } = useAppTheme();
   const { user } = useAuth();
   const handleplaceorder = async() => {
     if (!user) {
@@ -23,7 +25,7 @@ export default function Checkout() {
       return;
     }
     try {
-      await axios.post(`https://myntra-clone-xj36.onrender.com/order/create/${user._id}`, {
+      await axios.post(`http://192.168.0.114:5000/order/create/${user._id}`, {
         shippingAddress: "123 Main Street, Apt 4B, New York, NY, 10001",
         paymentMethod: "Card",
       });
@@ -35,113 +37,123 @@ export default function Checkout() {
     
   };
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Checkout</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Checkout</Text>
       </View>
       <ScrollView style={styles.content}>
-        <View style={styles.section}>
+        <View style={[styles.section, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
           <View style={styles.sectionHeader}>
-            <MapPin size={24} color="#ff3f6c" />
-            <Text style={styles.sectionTitle}>Shipping Address</Text>
+            <MapPin size={24} color={colors.primary} />
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Shipping Address</Text>
           </View>
           <View style={styles.form}>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
               placeholder="Full Name"
+              placeholderTextColor={colors.textMuted}
               defaultValue="John Doe"
             />
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
               placeholder="Address Line 1"
+              placeholderTextColor={colors.textMuted}
               defaultValue="123 Main Street"
             />
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
               placeholder="Address Line 2"
+              placeholderTextColor={colors.textMuted}
               defaultValue="Apt 4B"
             />
             <View style={styles.row}>
               <TextInput
-                style={[styles.input, styles.halfInput]}
+                style={[styles.input, styles.halfInput, { backgroundColor: colors.background, color: colors.text }]}
                 placeholder="City"
+                placeholderTextColor={colors.textMuted}
                 defaultValue="New York"
               />
               <TextInput
-                style={[styles.input, styles.halfInput]}
+                style={[styles.input, styles.halfInput, { backgroundColor: colors.background, color: colors.text }]}
                 placeholder="State"
+                placeholderTextColor={colors.textMuted}
                 defaultValue="NY"
               />
             </View>
             <View style={styles.row}>
               <TextInput
-                style={[styles.input, styles.halfInput]}
+                style={[styles.input, styles.halfInput, { backgroundColor: colors.background, color: colors.text }]}
                 placeholder="Postal Code"
+                placeholderTextColor={colors.textMuted}
                 defaultValue="10001"
               />
               <TextInput
-                style={[styles.input, styles.halfInput]}
+                style={[styles.input, styles.halfInput, { backgroundColor: colors.background, color: colors.text }]}
                 placeholder="Country"
+                placeholderTextColor={colors.textMuted}
                 defaultValue="United States"
               />
             </View>
           </View>
         </View>
         {/* Payment Section */}
-        <View style={styles.section}>
+        <View style={[styles.section, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
           <View style={styles.sectionHeader}>
-            <CreditCard size={24} color="#ff3f6c" />
-            <Text style={styles.sectionTitle}>Payment Method</Text>
+            <CreditCard size={24} color={colors.primary} />
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Payment Method</Text>
           </View>
           <View style={styles.form}>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
               placeholder="Card Number"
+              placeholderTextColor={colors.textMuted}
               defaultValue="**** **** **** 4242"
             />
             <View style={styles.row}>
               <TextInput
-                style={[styles.input, styles.halfInput]}
+                style={[styles.input, styles.halfInput, { backgroundColor: colors.background, color: colors.text }]}
                 placeholder="Expiry Date"
+                placeholderTextColor={colors.textMuted}
                 defaultValue="12/25"
               />
               <TextInput
-                style={[styles.input, styles.halfInput]}
+                style={[styles.input, styles.halfInput, { backgroundColor: colors.background, color: colors.text }]}
                 placeholder="CVV"
+                placeholderTextColor={colors.textMuted}
                 defaultValue="***"
               />
             </View>
           </View>
         </View>
         {/* Order Summary */}
-        <View style={styles.section}>
+        <View style={[styles.section, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
           <View style={styles.sectionHeader}>
-            <Truck size={24} color="#ff3f6c" />
-            <Text style={styles.sectionTitle}>Order Summary</Text>
+            <Truck size={24} color={colors.primary} />
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Order Summary</Text>
           </View>
           <View style={styles.summary}>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Subtotal</Text>
-              <Text style={styles.summaryValue}>₹3,798</Text>
+              <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Subtotal</Text>
+              <Text style={[styles.summaryValue, { color: colors.text }]}>₹3,798</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Shipping</Text>
-              <Text style={styles.summaryValue}>₹99</Text>
+              <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Shipping</Text>
+              <Text style={[styles.summaryValue, { color: colors.text }]}>₹99</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Tax</Text>
-              <Text style={styles.summaryValue}>₹190</Text>
+              <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Tax</Text>
+              <Text style={[styles.summaryValue, { color: colors.text }]}>₹190</Text>
             </View>
-            <View style={[styles.summaryRow, styles.total]}>
-              <Text style={styles.totalLabel}>Total</Text>
-              <Text style={styles.totalValue}>₹4,087</Text>
+            <View style={[styles.summaryRow, styles.total, { borderTopColor: colors.border }]}>
+              <Text style={[styles.totalLabel, { color: colors.text }]}>Total</Text>
+              <Text style={[styles.totalValue, { color: colors.primary }]}>₹4,087</Text>
             </View>
           </View>
         </View>
       </ScrollView>
-      <View style={styles.footer}>
+      <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <TouchableOpacity
-          style={styles.placeOrderButton}
+          style={[styles.placeOrderButton, { backgroundColor: colors.primary }]}
           onPress={handleplaceorder}
         >
           <Text style={styles.placeOrderButtonText}>PLACE ORDER</Text>

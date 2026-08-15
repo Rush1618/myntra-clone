@@ -8,12 +8,16 @@ import {
   StyleSheet,
   useWindowDimensions,
   ActivityIndicator,
+  Alert,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { Heart, ShoppingBag } from "lucide-react-native";
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useAppTheme } from "@/theme/ThemeProvider";
 import axios from "axios";
+import { recordRecentlyViewed } from "@/utils/recentlyViewed";
+import { RecommendationCarousel } from "@/components/RecommendationCarousel";
 
 // Mock product data - in a real app, this would come from an API
 // const products = {
@@ -82,6 +86,7 @@ import axios from "axios";
 export default function ProductDetails() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const { colors } = useAppTheme();
   const { width } = useWindowDimensions();
   const [selectedSize, setSelectedSize] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -99,7 +104,7 @@ export default function ProductDetails() {
       try {
         setIsLoading(true);
         const product = await axios.get(
-          `https://myntra-clone-xj36.onrender.com/product/${id}`
+          `http://192.168.0.114:5000/product/${id}`
         );
         setproduct(product.data);
       } catch (error) {
@@ -111,6 +116,24 @@ export default function ProductDetails() {
     };
     fetchproduct();
   }, []);
+
+  useEffect(() => {
+    if (!product?._id) {
+      return;
+    }
+
+    void recordRecentlyViewed(
+      {
+        _id: product._id,
+        name: product.name,
+        brand: product.brand,
+        price: product.price,
+        discount: product.discount,
+        images: product.images,
+      },
+      user?._id
+    );
+  }, [product?._id, user?._id]);
 
   useEffect(() => {
     // Start auto-scroll
@@ -150,12 +173,17 @@ export default function ProductDetails() {
     }
 
     try {
-      await axios.post(`https://myntra-clone-xj36.onrender.com/wishlist`, {
-        userId: user._id,
-        productId: id,
-      });
-      setiswishlist(true);
-      router.push("/wishlist");
+      if (iswishlist) {
+        setiswishlist(false);
+        Alert.alert("Wishlist", "Removed from wishlist");
+      } else {
+        await axios.post(`http://192.168.0.114:5000/wishlist`, {
+          userId: user._id,
+          productId: id,
+        });
+        setiswishlist(true);
+        Alert.alert("Wishlist", "Added to wishlist!");
+      }
     } catch (error) {
       console.log(error);
     }
@@ -166,14 +194,17 @@ export default function ProductDetails() {
       return;
     }
 
-    if (!selectedSize) {
+    const isBeautyProduct = product.name.toLowerCase().includes('lipstick');
+    const hasSizes = product.sizes?.length > 0 || !isBeautyProduct;
+
+    if (hasSizes && !selectedSize) {
       // In a real app, show a proper error message
       alert("Please select a size");
       return;
     }
     try {
       setLoading(true);
-      await axios.post(`https://myntra-clone-xj36.onrender.com/bag`, {
+      await axios.post(`http://192.168.0.114:5000/bag`, {
         userId: user._id,
         productId: id,
         size: selectedSize,
@@ -202,14 +233,27 @@ export default function ProductDetails() {
 
   if (isLoading) {
     return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#ff3f6c" />
+      <View style={[styles.loaderContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Stack.Screen 
+        options={{
+          headerRight: () => (
+            <TouchableOpacity onPress={handleAddwishlist} style={{ marginRight: 15 }}>
+              <Heart
+                size={24}
+                color={iswishlist ? colors.primary : colors.icon}
+                fill={iswishlist ? colors.primary : "none"}
+              />
+            </TouchableOpacity>
+          ),
+        }} 
+      />
       <ScrollView>
         <View style={styles.carouselContainer}>
           <ScrollView
@@ -245,8 +289,8 @@ export default function ProductDetails() {
         <View style={styles.content}>
           <View style={styles.header}>
             <View>
-              <Text style={styles.brand}>{product.brand}</Text>
-              <Text style={styles.name}>{product.name}</Text>
+              <Text style={[styles.brand, { color: colors.textMuted }]}>{product.brand}</Text>
+              <Text style={[styles.name, { color: colors.text }]}>{product.name}</Text>
             </View>
             <TouchableOpacity
               style={styles.wishlistButton}
@@ -254,54 +298,64 @@ export default function ProductDetails() {
             >
               <Heart
                 size={24}
-                color={iswishlist ? "#ff3f6c" : "#ccc"}
-                fill={iswishlist ? "#ff3f6c" : "none"}
+                color={iswishlist ? colors.primary : colors.icon}
+                fill={iswishlist ? colors.primary : "none"}
               />
             </TouchableOpacity>
           </View>
 
           <View style={styles.priceContainer}>
-            <Text style={styles.price}>₹{product.price}</Text>
-            <Text style={styles.discount}>{product.discount}</Text>
+            <Text style={[styles.price, { color: colors.text }]}>₹{product.price}</Text>
+            {product.discount ? <Text style={[styles.discount, { color: colors.primary }]}>{product.discount}% OFF</Text> : null}
           </View>
 
-          <Text style={styles.description}>{product.description}</Text>
+          <Text style={[styles.description, { color: colors.textMuted }]}>{product.description}</Text>
 
-          <View style={styles.sizeSection}>
-            <Text style={styles.sizeTitle}>Select Size</Text>
-            <View style={styles.sizeGrid}>
-              {product.sizes.map((size: any) => (
-                <TouchableOpacity
-                  key={size}
-                  style={[
-                    styles.sizeButton,
-                    selectedSize === size && styles.selectedSize,
-                  ]}
-                  onPress={() => setSelectedSize(size)}
-                >
-                  <Text
+          {!(product.name.toLowerCase().includes('lipstick')) && (
+            <View style={styles.sizeSection}>
+              <Text style={[styles.sizeTitle, { color: colors.text }]}>Select Size</Text>
+              <View style={styles.sizeGrid}>
+                {(product.sizes && product.sizes.length > 0 ? product.sizes : ["S", "M", "L", "XL"]).map((size: any) => (
+                  <TouchableOpacity
+                    key={size}
                     style={[
-                      styles.sizeText,
-                      selectedSize === size && styles.selectedSizeText,
+                      styles.sizeButton,
+                      { borderColor: colors.border },
+                      selectedSize === size && { borderColor: colors.primary, backgroundColor: colors.primary + '20' },
                     ]}
+                    onPress={() => setSelectedSize(size)}
                   >
-                    {size}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <Text
+                      style={[
+                        styles.sizeText,
+                        { color: colors.text },
+                        selectedSize === size && { color: colors.primary },
+                      ]}
+                    >
+                      {size}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
-          </View>
+          )}
         </View>
+
+        <RecommendationCarousel 
+          userId={user?._id}
+          excludeIds={[id as string]}
+          title="Similar Products"
+        />
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <TouchableOpacity
-          style={styles.addToBagButton}
+          style={[styles.addToBagButton, { backgroundColor: colors.primary }]}
           onPress={handleAddToBag}
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator size="small" color="#ff3f6c" />
+            <ActivityIndicator size="small" color="#ffffff" />
           ) : (
             <>
               <ShoppingBag size={20} color="#fff" />

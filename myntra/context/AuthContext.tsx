@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { getUserData, saveUserData, clearUserData } from "@/utils/storage";
+import { mergeLocalRecentlyViewedWithServer, clearLocalRecentlyViewed } from "@/utils/recentlyViewed";
 import React from "react";
 import axios from "axios";
 type AuthContextType = {
@@ -30,9 +31,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     })();
   }, []);
 
+  useEffect(() => {
+    if (!user?._id) {
+      return;
+    }
+
+    void mergeLocalRecentlyViewedWithServer(user._id);
+  }, [user?._id]);
+
   const login = async (email: string, password: string) => {
-    // 👉 Replace with your real API URL
-    const res = await axios.post("https://myntra-clone-xj36.onrender.com/user/login", {
+    // If testing on Android Emulator, change localhost to 10.0.2.2
+    const res = await axios.post("http://192.168.0.114:5000/user/login", {
       email,
       password,
     });
@@ -42,13 +51,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await saveUserData(data._id, data.fullName, data.email);
       setUser({ _id: data._id, name: data.name, email: data.email });
       setIsAuthenticated(true);
+      void mergeLocalRecentlyViewedWithServer(data._id);
     } else {
       throw new Error(data.message || "Login failed");
     }
   };
   const Signup = async (fullName: string, email: string, password: string) => {
-    // 👉 Replace with your real API URL
-    const res = await axios.post("https://myntra-clone-xj36.onrender.com/user/signup", {
+    // If testing on Android Emulator, change localhost to 10.0.2.2
+    const res = await axios.post("http://192.168.0.114:5000/user/signup", {
       fullName,
       email,
       password,
@@ -58,12 +68,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await saveUserData(data._id, data.fullName, data.email);
       setUser({ _id: data._id, name: data.name, email: data.email });
       setIsAuthenticated(true);
+      void mergeLocalRecentlyViewedWithServer(data._id);
     } else {
       throw new Error(data.message || "Login failed");
     }
   };
   const logout = async () => {
     await clearUserData();
+    await clearLocalRecentlyViewed();
     setUser(null);
     setIsAuthenticated(false);
   };

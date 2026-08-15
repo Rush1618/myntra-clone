@@ -28,6 +28,13 @@ const OrderSchema = new mongoose.Schema(
     shippingAddress: String,
     paymentMethod: String,
     tracking: TrackingSchema,
+    invoiceId: { type: String, unique: true, sparse: true },
+    idempotencyKey: { type: String, unique: true, sparse: true },
+    paymentStatus: {
+      type: String,
+      enum: ["pending", "paid", "failed", "refunded"],
+      default: "pending",
+    },
   },
   { timestamps: true }
 );

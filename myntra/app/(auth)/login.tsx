@@ -12,9 +12,11 @@ import { useRouter } from "expo-router";
 import React from "react";
 import { Eye, EyeOff } from "lucide-react-native";
 import { useAuth } from "@/context/AuthContext";
+import { useAppTheme } from "@/theme/ThemeProvider";
 
 export default function Login() {
   const { login } = useAuth();
+  const { colors } = useAppTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
@@ -33,28 +35,30 @@ export default function Login() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}> 
       <Image
         source={{
           uri: "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070&auto=format&fit=crop",
         }}
         style={styles.backgroundImage}
       />
-      <View style={styles.formContainer}>
-        <Text style={styles.title}>Welcome to Myntra</Text>
-        <Text style={styles.subtitle}>Login to continue shopping</Text>
+      <View style={[styles.formContainer, { backgroundColor: colors.surfaceElevated }]}> 
+        <Text style={[styles.title, { color: colors.text }]}>Welcome to Myntra</Text>
+        <Text style={[styles.subtitle, { color: colors.textMuted }]}>Login to continue shopping</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.inputText }]}
           placeholder="Email"
+          placeholderTextColor={colors.placeholder}
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
         />
-        <View style={styles.passwordContainer}>
+        <View style={[styles.passwordContainer, { backgroundColor: colors.inputBackground }]}> 
           <TextInput
-            style={styles.passwordInput}
+            style={[styles.passwordInput, { color: colors.inputText }]}
             placeholder="Password"
+            placeholderTextColor={colors.placeholder}
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!showPassword}
@@ -64,21 +68,21 @@ export default function Login() {
             onPress={() => setShowPassword(!showPassword)}
           >
             {showPassword ? (
-              <EyeOff size={20} color="#666" />
+                <EyeOff size={20} color={colors.iconMuted} />
             ) : (
-              <Eye size={20} color="#666" />
+                <Eye size={20} color={colors.iconMuted} />
             )}
           </TouchableOpacity>
         </View>
         <TouchableOpacity
-          style={styles.button}
+            style={[styles.button, { backgroundColor: colors.primary }]}
           onPress={handleLogin}
           disabled={isloading}
         >
           {isloading ? (
-            <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.primaryText} />
           ) : (
-            <Text style={styles.buttonText}>LOGIN</Text>
+              <Text style={[styles.buttonText, { color: colors.primaryText }]}>LOGIN</Text>
           )}
         </TouchableOpacity>
 
@@ -86,7 +90,7 @@ export default function Login() {
           style={styles.signupLink}
           onPress={() => router.push("/signup")}
         >
-          <Text style={styles.signupText}>Don't have an account? Sign Up</Text>
+          <Text style={[styles.signupText, { color: colors.primary }]}>Don't have an account? Sign Up</Text>
         </TouchableOpacity>
       </View>
     </View>
