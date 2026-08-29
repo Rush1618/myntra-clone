@@ -143,19 +143,21 @@ export default function Orders() {
   const { colors } = useAppTheme();
   const [fetchedOrders, setFetchedOrders] = useState<any>(null);
   useEffect(() => {
-    // Simulate loading time
     const fetchorder = async () => {
-      if (user) {
+      if (user?._id) {
         try {
           setIsLoading(true);
           const response = await axios.get(
-            `${API_BASE_URL}/order/user/${user._id}`
+            `${API_BASE_URL}/Order/user/${user._id}`
           );
-          if (Array.isArray(response.data)) {
-            setFetchedOrders(response.data);
-          }
+          const rawOrders = Array.isArray(response.data)
+            ? response.data
+            : Array.isArray(response.data?.orders)
+            ? response.data.orders
+            : [];
+          setFetchedOrders(rawOrders);
         } catch (error) {
-          console.log(error);
+          console.log("Error fetching orders:", error);
         } finally {
           setIsLoading(false);
         }
@@ -164,7 +166,7 @@ export default function Orders() {
       }
     };
     fetchorder();
-  }, [user]);
+  }, [user?._id]);
    if (isLoading) {
       return (
         <View style={[styles.loaderContainer, { backgroundColor: colors.background }]}>
@@ -187,61 +189,73 @@ export default function Orders() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>My Orders</Text>
-        <TouchableOpacity
-          style={{ flexDirection: "row", alignItems: "center", gap: 5, padding: 8, backgroundColor: colors.surface, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}
-          onPress={() => user && Linking.openURL(`${API_BASE_URL}/Order/export/csv/${user._id}`)}
-        >
-          <Download size={16} color={colors.text} />
-          <Text style={{ fontSize: 12, fontWeight: "600", color: colors.text }}>Export CSV</Text>
-        </TouchableOpacity>
+        <View style={styles.headerInner}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>My Orders</Text>
+          <TouchableOpacity
+            style={{ flexDirection: "row", alignItems: "center", gap: 5, padding: 8, backgroundColor: colors.surface, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}
+            onPress={() => user && Linking.openURL(`${API_BASE_URL}/Order/export/csv/${user._id}`)}
+          >
+            <Download size={16} color={colors.text} />
+            <Text style={{ fontSize: 12, fontWeight: "600", color: colors.text }}>Export CSV</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <ScrollView style={styles.content}>
-        {displayOrders.map((order:any) => (
-          <View key={order._id} style={[styles.orderCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContainer}>
+        {displayOrders.map((order:any) => {
+          const orderKey = order._id || order.id || Math.random().toString();
+          const orderDate = order.date || (order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "Recent");
+          const orderItems = Array.isArray(order.items) ? order.items : [];
+          const trackingNumber = order.tracking?.number || "TRK-" + String(orderKey).slice(-8).toUpperCase();
+          const trackingCarrier = order.tracking?.carrier || "Standard Delivery";
+          const timeline = Array.isArray(order.tracking?.timeline) ? order.tracking.timeline : [
+            { status: order.status || "Processing", location: "Hub", timestamp: orderDate }
+          ];
+
+          return (
+          <View key={orderKey} style={[styles.orderCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
             <TouchableOpacity
               style={[styles.orderHeader, { borderBottomColor: colors.border }]}
-              onPress={() => toggleOrderDetails(order._id)}
+              onPress={() => toggleOrderDetails(orderKey)}
             >
               <View>
-                <Text style={[styles.orderId, { color: colors.text }]}>Order #{order._id}</Text>
-                <Text style={[styles.orderDate, { color: colors.textMuted }]}>{order.date}</Text>
+                <Text style={[styles.orderId, { color: colors.text }]}>Order #{String(orderKey).slice(-8).toUpperCase()}</Text>
+                <Text style={[styles.orderDate, { color: colors.textMuted }]}>{orderDate}</Text>
               </View>
               <View style={[styles.statusContainer, { backgroundColor: colors.primary + '20' }]}>
                 <Package size={16} color={colors.primary} />
-                <Text style={[styles.orderStatus, { color: colors.primary }]}>{order.status}</Text>
+                <Text style={[styles.orderStatus, { color: colors.primary }]}>{order.status || "Processing"}</Text>
               </View>
             </TouchableOpacity>
 
             <View style={styles.itemsContainer}>
-              {order.items.map((item:any, index: number) => {
+              {orderItems.map((item:any, index: number) => {
                 const productInfo = item.productId || item;
                 const imageUri = Array.isArray(productInfo.images) ? productInfo.images?.[0] : (productInfo.image || productInfo.images);
                 return (
                   <View key={item._id || index} style={styles.orderItem}>
                     <Image
-                      source={{ uri: imageUri }}
+                      source={{ uri: imageUri || "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500" }}
                       style={styles.itemImage}
                     />
                     <View style={styles.itemInfo}>
-                      <Text style={[styles.brandName, { color: colors.textMuted }]}>{productInfo.brand}</Text>
-                      <Text style={[styles.itemName, { color: colors.text }]}>{productInfo.name}</Text>
-                      <Text style={[styles.itemPrice, { color: colors.text }]}>₹{productInfo.price}</Text>
+                      <Text style={[styles.brandName, { color: colors.textMuted }]}>{productInfo.brand || "Brand"}</Text>
+                      <Text style={[styles.itemName, { color: colors.text }]}>{productInfo.name || "Product"}</Text>
+                      <Text style={[styles.itemPrice, { color: colors.text }]}>₹{item.price || productInfo.price || 0}</Text>
                     </View>
                   </View>
                 );
               })}
             </View>
 
-            {expandedOrder === order._id && (
+            {expandedOrder === orderKey && (
               <View style={[styles.orderDetails, { borderTopColor: colors.border }]}>
                 <View style={styles.detailSection}>
                   <View style={styles.detailHeader}>
                     <MapPin size={20} color={colors.text} />
                     <Text style={[styles.detailTitle, { color: colors.text }]}>Shipping Address</Text>
                   </View>
-                  <Text style={[styles.detailText, { color: colors.textMuted }]}>{order.shippingAddress}</Text>
+                  <Text style={[styles.detailText, { color: colors.textMuted }]}>{order.shippingAddress || "Registered Delivery Address"}</Text>
                 </View>
 
                 <View style={styles.detailSection}>
@@ -249,11 +263,11 @@ export default function Orders() {
                     <CreditCard size={20} color={colors.text} />
                     <Text style={[styles.detailTitle, { color: colors.text }]}>Payment Method</Text>
                   </View>
-                  <Text style={[styles.detailText, { color: colors.textMuted }]}>{order.paymentMethod}</Text>
+                  <Text style={[styles.detailText, { color: colors.textMuted }]}>{order.paymentMethod || "Online Payment"}</Text>
                   
                   <TouchableOpacity
                     style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 10 }}
-                    onPress={() => Linking.openURL(`${API_BASE_URL}/Order/receipt/${order._id}`)}
+                    onPress={() => Linking.openURL(`${API_BASE_URL}/Order/receipt/${order._id || orderKey}`)}
                   >
                     <FileText size={16} color={colors.primary} />
                     <Text style={{ color: colors.primary, fontWeight: "600" }}>Download PDF Receipt</Text>
@@ -267,15 +281,15 @@ export default function Orders() {
                   </View>
                   <View style={styles.trackingInfo}>
                     <Text style={[styles.trackingNumber, { color: colors.textMuted }]}>
-                      Tracking Number: {order.tracking.number}
+                      Tracking Number: {trackingNumber}
                     </Text>
                     <Text style={[styles.trackingCarrier, { color: colors.textMuted }]}>
-                      Carrier: {order.tracking.carrier}
+                      Carrier: {trackingCarrier}
                     </Text>
                   </View>
 
                   <View style={styles.timeline}>
-                    {order.tracking.timeline.map((event:any, index:any) => (
+                    {timeline.map((event:any, index:any) => (
                       <View key={index} style={styles.timelineEvent}>
                         <View style={[styles.timelinePoint, { backgroundColor: colors.primary }]} />
                         <View style={styles.timelineContent}>
@@ -315,7 +329,8 @@ export default function Orders() {
               </TouchableOpacity>
             </View>
           </View>
-        ))}
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -333,20 +348,31 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   header: {
-    padding: 15,
-    paddingTop: 50,
-    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+  },
+  headerInner: {
+    paddingHorizontal: 16,
+    paddingTop: 50,
+    paddingBottom: 15,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    maxWidth: 900,
+    width: "100%",
+    alignSelf: "center",
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#3e3e3e",
   },
   content: {
     flex: 1,
+  },
+  scrollContainer: {
     padding: 15,
+    maxWidth: 900,
+    width: "100%",
+    alignSelf: "center",
   },
   orderCard: {
     backgroundColor: "#fff",

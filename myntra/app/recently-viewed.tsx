@@ -7,6 +7,8 @@ import {
   StyleSheet,
   Image,
   ActivityIndicator,
+  useWindowDimensions,
+  DimensionValue,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
@@ -22,8 +24,13 @@ export default function RecentlyViewedScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const { user } = useAuth();
+  const { width } = useWindowDimensions();
   const [items, setItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Responsive column calculation: 4 for desktop, 3 for tablet, 2 for mobile
+  const numColumns = width >= 960 ? 4 : width >= 600 ? 3 : 2;
+  const cardWidth: DimensionValue = `${Math.floor(100 / numColumns) - 2}%` as DimensionValue;
 
   useFocusEffect(
     React.useCallback(() => {
@@ -67,10 +74,12 @@ export default function RecentlyViewedScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.surface }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ChevronLeft size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Recently Viewed</Text>
+        <View style={styles.headerInner}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <ChevronLeft size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Recently Viewed</Text>
+        </View>
       </View>
 
       {isLoading ? (
@@ -85,19 +94,28 @@ export default function RecentlyViewedScreen() {
           </Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.grid}>
-          {items.map((item) => (
-            <TouchableOpacity
-              key={item._id}
-              style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              onPress={() => router.push(`/product/${item._id}`)}
-            >
-              <Image source={{ uri: item.images?.[0] }} style={styles.image} />
-              <Text style={[styles.brand, { color: colors.textMuted }]}>{item.brand}</Text>
-              <Text style={[styles.name, { color: colors.text }]}>{item.name}</Text>
-              <Text style={[styles.price, { color: colors.text }]}>₹{item.price}</Text>
-            </TouchableOpacity>
-          ))}
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.grid}>
+            {items.map((item) => (
+              <TouchableOpacity
+                key={item._id}
+                style={[
+                  styles.card,
+                  {
+                    width: cardWidth,
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                ]}
+                onPress={() => router.push(`/product/${item._id}`)}
+              >
+                <Image source={{ uri: item.images?.[0] }} style={styles.image} />
+                <Text style={[styles.brand, { color: colors.textMuted }]}>{item.brand}</Text>
+                <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
+                <Text style={[styles.price, { color: colors.text }]}>₹{item.price}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </ScrollView>
       )}
     </View>
@@ -109,12 +127,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    borderBottomWidth: 1,
+  },
+  headerInner: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 15,
+    paddingHorizontal: 16,
     paddingTop: 50,
     paddingBottom: 15,
-    borderBottomWidth: 1,
+    width: "100%",
+    maxWidth: 1100,
+    alignSelf: "center",
   },
   backButton: {
     marginRight: 8,
@@ -145,14 +168,20 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
   },
+  scrollContent: {
+    width: "100%",
+    maxWidth: 1100,
+    alignSelf: "center",
+    paddingVertical: 10,
+  },
   grid: {
-    padding: 15,
+    paddingHorizontal: 12,
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
+    gap: 12,
   },
   card: {
-    width: "48%",
     marginBottom: 16,
     borderRadius: 12,
     borderWidth: 1,
@@ -160,7 +189,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: "100%",
-    height: 180,
+    height: 200,
     borderRadius: 10,
     marginBottom: 8,
   },

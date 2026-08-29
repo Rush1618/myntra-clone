@@ -28,6 +28,7 @@ app.use("/product", productrouter);
 app.use("/bag", Bagroutes);
 app.use("/wishlist", Wishlistroutes);
 app.use("/Order", OrderRoutes);
+app.use("/order", OrderRoutes);
 app.use("/recently-viewed", RecentlyViewedRoutes);
 app.use("/notifications", NotificationRoutes);
 app.use("/export", ExportRoutes);

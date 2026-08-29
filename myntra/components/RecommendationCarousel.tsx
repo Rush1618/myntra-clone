@@ -50,11 +50,12 @@ export function RecommendationCarousel({
   const isFetching = useRef(false);
 
   const load = useCallback(async () => {
-    if (isFetching.current || !userId) return;
+    if (isFetching.current) return;
     isFetching.current = true;
     try {
-      const exclude = excludeIds.join(",");
-      const { data } = await axios.get(`${API_BASE_URL}/recommendations/${userId}`, {
+      const targetUserId = userId || "anonymous";
+      const exclude = excludeIds.filter(Boolean).join(",");
+      const { data } = await axios.get(`${API_BASE_URL}/recommendations/${targetUserId}`, {
         params: { limit: 20, ...(exclude ? { exclude } : {}) },
       });
       setProducts(data.recommendations ?? []);

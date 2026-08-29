@@ -1,4 +1,5 @@
 const NotificationJob = require("../models/NotificationJob");
+const AuditLog = require("../models/AuditLog");
 const { sendPushToUser } = require("../utils/sendPushNotification");
 
 const MAX_RETRIES = 3;
@@ -25,11 +26,25 @@ async function processPendingJobs() {
         await job.save();
       } catch (err) {
         job.retryCount += 1;
-        job.status = job.retryCount >= MAX_RETRIES ? "failed" : "pending";
-        // Exponential backoff
-        job.nextAttempt = new Date(Date.now() + Math.pow(2, job.retryCount) * 60000); // 2min, 4min, 8min
+        const permanentlyFailed = job.retryCount >= MAX_RETRIES;
+        job.status = permanentlyFailed ? "failed" : "pending";
+        // Exponential backoff: 2min, 4min, 8min
+        job.nextAttempt = new Date(Date.now() + Math.pow(2, job.retryCount) * 60000);
         await job.save();
         console.error(`Failed to send notification job ${job._id}:`, err.message);
+
+        // Audit trail: record permanent failure
+        if (permanentlyFailed) {
+          try {
+            await AuditLog.create({
+              entityType: "NotificationJob",
+              entityId: job._id,
+              event: "failed",
+              metadata: { reason: err.message, userId: job.userId, title: job.title, retryCount: job.retryCount },
+              performedBy: "system",
+            });
+          } catch (_) {}
+        }
       }
     }
   } catch (error) {

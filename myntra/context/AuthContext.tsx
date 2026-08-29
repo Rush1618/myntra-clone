@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const data = await res.data.user;
     if (data.fullName) {
       await saveUserData(data._id, data.fullName, data.email);
-      setUser({ _id: data._id, name: data.name, email: data.email });
+      setUser({ _id: data._id, name: data.fullName, email: data.email });
       setIsAuthenticated(true);
       void mergeLocalRecentlyViewedWithServer(data._id);
     } else {
@@ -67,7 +67,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const data = await res.data.user;
     if (data.fullName) {
       await saveUserData(data._id, data.fullName, data.email);
-      setUser({ _id: data._id, name: data.name, email: data.email });
+      setUser({ _id: data._id, name: data.fullName, email: data.email });
       setIsAuthenticated(true);
       void mergeLocalRecentlyViewedWithServer(data._id);
     } else {

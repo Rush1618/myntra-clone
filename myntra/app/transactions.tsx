@@ -157,93 +157,108 @@ export default function TransactionsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.surface }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <ArrowLeft size={22} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>My Transactions</Text>
-        <TouchableOpacity onPress={downloadCSV} style={styles.exportBtn} activeOpacity={0.7}>
-          <Download size={18} color={colors.primary} />
-          <Text style={[styles.exportText, { color: colors.primary }]}>CSV</Text>
-        </TouchableOpacity>
+        <View style={styles.headerInner}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <ArrowLeft size={22} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>My Transactions</Text>
+          <TouchableOpacity onPress={downloadCSV} style={styles.exportBtn} activeOpacity={0.7}>
+            <Download size={18} color={colors.primary} />
+            <Text style={[styles.exportText, { color: colors.primary }]}>CSV</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Filter Bar */}
-      <View style={[styles.filterBar, { borderBottomColor: colors.border, backgroundColor: colors.surface }]}>
-        <FlatList
-          data={filterOptions}
-          keyExtractor={(item) => item.value}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterList}
-          renderItem={({ item }) => {
-            const isSelected = statusFilter === item.value;
-            return (
-              <TouchableOpacity
-                onPress={() => handleFilterChange(item.value)}
-                style={[
-                  styles.filterBtn,
-                  {
-                    backgroundColor: isSelected ? colors.primary : colors.surfaceMuted,
-                  },
-                ]}
-              >
-                <Text
+      <View style={styles.responsiveShell}>
+        {/* Filter Bar */}
+        <View style={[styles.filterBar, { borderBottomColor: colors.border, backgroundColor: colors.surface }]}>
+          <FlatList
+            data={filterOptions}
+            keyExtractor={(item) => item.value}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterList}
+            renderItem={({ item }) => {
+              const isSelected = statusFilter === item.value;
+              return (
+                <TouchableOpacity
+                  onPress={() => handleFilterChange(item.value)}
                   style={[
-                    styles.filterBtnText,
+                    styles.filterBtn,
                     {
-                      color: isSelected ? colors.primaryText : colors.textSecondary,
-                      fontWeight: isSelected ? "700" : "500",
+                      backgroundColor: isSelected ? colors.primary : colors.surfaceMuted,
                     },
                   ]}
                 >
-                  {item.label}
+                  <Text
+                    style={[
+                      styles.filterBtnText,
+                      {
+                        color: isSelected ? colors.primaryText : colors.textSecondary,
+                        fontWeight: isSelected ? "700" : "500",
+                      },
+                    ]}
+                  >
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            }}
+          />
+        </View>
+
+        {/* List */}
+        <FlatList
+          data={orders}
+          keyExtractor={(o) => o._id}
+          renderItem={renderItem}
+          contentContainerStyle={styles.list}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.4}
+          ListEmptyComponent={
+            !loading ? (
+              <View style={styles.emptyState}>
+                <FileText size={56} color={colors.textMuted} />
+                <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+                  No transactions found
                 </Text>
-              </TouchableOpacity>
-            );
-          }}
+              </View>
+            ) : null
+          }
+          ListFooterComponent={
+            loading ? (
+              <ActivityIndicator
+                color={colors.primary}
+                style={{ marginVertical: 20 }}
+              />
+            ) : null
+          }
         />
       </View>
-
-      {/* List */}
-      <FlatList
-        data={orders}
-        keyExtractor={(o) => o._id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.list}
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.4}
-        ListEmptyComponent={
-          !loading ? (
-            <View style={styles.emptyState}>
-              <FileText size={56} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                No transactions found
-              </Text>
-            </View>
-          ) : null
-        }
-        ListFooterComponent={
-          loading ? (
-            <ActivityIndicator
-              color={colors.primary}
-              style={{ marginVertical: 20 }}
-            />
-          ) : null
-        }
-      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  responsiveShell: {
+    flex: 1,
+    width: "100%",
+    maxWidth: 860,
+    alignSelf: "center",
+  },
   header: {
+    borderBottomWidth: 1,
+  },
+  headerInner: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
     paddingTop: 52,
     paddingBottom: 14,
-    borderBottomWidth: 1,
+    width: "100%",
+    maxWidth: 860,
+    alignSelf: "center",
   },
   backBtn: { marginRight: 12 },
   headerTitle: { flex: 1, fontSize: 20, fontWeight: "700" },

@@ -125,7 +125,66 @@ router.post("/create/:userId", async (req, res) => {
     res.status(200).json({ message: "Order placed successfully", orderId: newOrder._id });
   } catch (error) {
     console.error(error);
+    // Audit log — record failure event for observability
+    try {
+      await AuditLog.create({
+        entityType: "Order",
+        entityId: null,
+        event: "failed",
+        metadata: { reason: error.message, userId: req.params.userId },
+        performedBy: req.params.userId,
+      });
+    } catch (_) {}
     return res.status(500).json({ message: "Something went wrong" });
+  }
+});
+
+/**
+ * PATCH /Order/:orderId/refund
+ * Mark an order as refunded and record an audit log event.
+ */
+router.patch("/:orderId/refund", async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.orderId);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    order.status = "Refunded";
+    order.paymentStatus = "refunded";
+    await order.save();
+
+    await AuditLog.create({
+      entityType: "Order",
+      entityId: order._id,
+      event: "refunded",
+      metadata: {
+        total: order.total,
+        invoiceId: order.invoiceId,
+        reason: req.body.reason ?? "Customer request",
+      },
+      performedBy: req.body.performedBy ?? "system",
+    });
+
+    res.status(200).json({ message: "Order refunded", orderId: order._id });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Something went wrong" });
+  }
+});
+
+/**
+ * GET /Order/audit/:orderId
+ * Return the full audit trail for a specific order.
+ */
+router.get("/audit/:orderId", async (req, res) => {
+  try {
+    const logs = await AuditLog.find({
+      entityId: req.params.orderId,
+      entityType: "Order",
+    }).sort({ timestamp: 1 });
+    res.status(200).json(logs);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Something went wrong" });
   }
 });
 

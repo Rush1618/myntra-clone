@@ -84,18 +84,43 @@ router.post("/:userid/view", async (req, res) => {
 
     if (!updated) return res.status(404).json({ message: "User not found" });
 
-    // Record browsing interest by category (non-fatal)
+    // Record browsing history with strict 50-item limit per user and increment viewCount
     try {
-      const product = await Product.findById(productId).select("category");
-      if (product?.category) {
+      const product = await Product.findByIdAndUpdate(
+        productId,
+        { $inc: { viewCount: 1 } },
+        { new: true }
+      ).populate("category", "name");
+
+      if (product) {
+        const catName = product.categoryName || product.category?.name || "General";
+        const catId = product.category?._id || product.category;
+
+        // Upsert unique product view for user
         await BrowsingHistory.findOneAndUpdate(
-          { userId: req.params.userid, category: product.category },
+          { userId: req.params.userid, productId },
           {
-            $inc: { viewCount: 1 },
-            $set: { lastViewedAt: new Date() },
+            userId: req.params.userid,
+            productId,
+            category: catName,
+            categoryRef: catId,
+            viewedAt: new Date(),
           },
           { upsert: true, new: true }
         );
+
+        // Enforce maximum 50 unique views per user
+        const totalViews = await BrowsingHistory.countDocuments({ userId: req.params.userid });
+        if (totalViews > 50) {
+          const excess = totalViews - 50;
+          const oldestRecords = await BrowsingHistory.find({ userId: req.params.userid })
+            .sort({ viewedAt: 1 })
+            .limit(excess)
+            .select("_id");
+          if (oldestRecords.length > 0) {
+            await BrowsingHistory.deleteMany({ _id: { $in: oldestRecords.map((r) => r._id) } });
+          }
+        }
       }
     } catch (histErr) {
       console.error("BrowsingHistory upsert failed (non-fatal):", histErr.message);

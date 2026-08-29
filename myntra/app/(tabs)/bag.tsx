@@ -156,15 +156,17 @@ export default function Bag() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Shopping Bag</Text>
-        {activeItems.length > 0 && (
-          <Text style={[styles.headerCount, { color: colors.textMuted }]}>
-            {activeItems.length} item{activeItems.length !== 1 ? "s" : ""}
-          </Text>
-        )}
+        <View style={styles.headerInner}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Shopping Bag</Text>
+          {activeItems.length > 0 && (
+            <Text style={[styles.headerCount, { color: colors.textMuted }]}>
+              {activeItems.length} item{activeItems.length !== 1 ? "s" : ""}
+            </Text>
+          )}
+        </View>
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         {/* ── Active Cart Items ── */}
         {activeItems.length === 0 ? (
           <View style={styles.emptySection}>
@@ -272,16 +274,18 @@ export default function Bag() {
       {/* ── Footer ── */}
       {activeItems.length > 0 && (
         <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
-          <View style={styles.totalContainer}>
-            <Text style={[styles.totalLabel, { color: colors.text }]}>Total Amount</Text>
-            <Text style={[styles.totalAmount, { color: colors.text }]}>₹{total.toFixed(2)}</Text>
+          <View style={styles.footerInner}>
+            <View style={styles.totalContainer}>
+              <Text style={[styles.totalLabel, { color: colors.text }]}>Total Amount</Text>
+              <Text style={[styles.totalAmount, { color: colors.text }]}>₹{total.toFixed(2)}</Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.checkoutButton, { backgroundColor: colors.primary }]}
+              onPress={() => router.push("/checkout")}
+            >
+              <Text style={[styles.checkoutButtonText, { color: colors.primaryText }]}>PLACE ORDER</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={[styles.checkoutButton, { backgroundColor: colors.primary }]}
-            onPress={() => router.push("/checkout")}
-          >
-            <Text style={[styles.checkoutButtonText, { color: colors.primaryText }]}>PLACE ORDER</Text>
-          </TouchableOpacity>
         </View>
       )}
     </View>
@@ -292,16 +296,28 @@ const styles = StyleSheet.create({
   loaderContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   container: { flex: 1 },
   header: {
-    padding: 15,
-    paddingTop: 50,
     borderBottomWidth: 1,
+  },
+  headerInner: {
+    paddingHorizontal: 16,
+    paddingTop: 50,
+    paddingBottom: 15,
     flexDirection: "row",
     alignItems: "baseline",
     gap: 8,
+    maxWidth: 900,
+    width: "100%",
+    alignSelf: "center",
   },
   headerTitle: { fontSize: 24, fontWeight: "bold" },
   headerCount: { fontSize: 14 },
-  content: { flex: 1, padding: 15 },
+  content: { flex: 1 },
+  scrollContent: {
+    padding: 15,
+    maxWidth: 900,
+    width: "100%",
+    alignSelf: "center",
+  },
   emptyState: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20, paddingTop: 80 },
   emptySection: { alignItems: "center", paddingTop: 60, gap: 12 },
   emptyTitle: { fontSize: 18, marginTop: 20, marginBottom: 20 },
@@ -341,6 +357,7 @@ const styles = StyleSheet.create({
   actionBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
   actionText: { fontSize: 12, fontWeight: "600" },
   footer: { padding: 15, borderTopWidth: 1 },
+  footerInner: { maxWidth: 900, width: "100%", alignSelf: "center" },
   totalContainer: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 15 },
   totalLabel: { fontSize: 16 },
   totalAmount: { fontSize: 18, fontWeight: "bold" },

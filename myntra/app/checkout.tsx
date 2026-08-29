@@ -20,29 +20,42 @@ export default function Checkout() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const { user } = useAuth();
+  
   const handleplaceorder = async() => {
     if (!user) {
       router.push("/login");
       return;
     }
+    if (loading) return;
+    setLoading(true);
     try {
-      await axios.post(`${API_BASE_URL}/order/create/${user._id}`, {
-        shippingAddress: "123 Main Street, Apt 4B, New York, NY, 10001",
-        paymentMethod: "Card",
-      });
+      const idempotencyKey = `ord-${user._id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      await axios.post(
+        `${API_BASE_URL}/Order/create/${user._id}`,
+        {
+          shippingAddress: "123 Main Street, Apt 4B, New York, NY, 10001",
+          paymentMethod: "Card",
+        },
+        {
+          headers: { "x-idempotency-key": idempotencyKey },
+        }
+      );
       router.push("/orders");
     } catch (error) {
       console.log(error);
+    } finally {
+      setLoading(false);
     }
-
-    
   };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Checkout</Text>
+        <View style={styles.headerInner}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Checkout</Text>
+        </View>
       </View>
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         <View style={[styles.section, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
           <View style={styles.sectionHeader}>
             <MapPin size={24} color={colors.primary} />
@@ -169,20 +182,28 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   header: {
-    padding: 15,
-    paddingTop: 50,
-    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+  },
+  headerInner: {
+    paddingHorizontal: 16,
+    paddingTop: 50,
+    paddingBottom: 15,
+    maxWidth: 800,
+    width: "100%",
+    alignSelf: "center",
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#3e3e3e",
   },
   content: {
     flex: 1,
+  },
+  scrollContent: {
     padding: 15,
+    maxWidth: 800,
+    width: "100%",
+    alignSelf: "center",
   },
   section: {
     marginBottom: 20,

@@ -320,14 +320,12 @@ export default function Home() {
         </ScrollView>
       </View>
 
-      {/* ── Personalized Recommendations ── */}
-      {user?._id && (
-        <RecommendationCarousel
-          userId={user._id}
-          excludeIds={recentlyViewed.map((i: any) => i._id)}
-          title="Recommended for You"
-        />
-      )}
+      {/* ── Personalized Recommendations / Cold-start Fallback ── */}
+      <RecommendationCarousel
+        userId={user?._id}
+        excludeIds={recentlyViewed.map((i: any) => i._id)}
+        title="Recommended for You"
+      />
     </ScrollView>
   );
 }

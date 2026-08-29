@@ -1,6 +1,7 @@
-import { themeRegistry } from "@/theme/ThemeProvider";
+import { themeRegistry } from "@/theme/themes";
 
 export const Colors = {
   light: themeRegistry.light.colors,
   dark: themeRegistry.dark.colors,
+  sepia: themeRegistry.sepia.colors,
 };
