@@ -62,9 +62,12 @@ router.post("/:userid/view", async (req, res) => {
   if (!productId) return res.status(400).json({ message: "productId required" });
 
   try {
+    const mongoose = require("mongoose");
+    const objectId = new mongoose.Types.ObjectId(productId);
+
     // Step 1: Remove any existing entry for this product (atomic dedup)
     await User.findByIdAndUpdate(req.params.userid, {
-      $pull: { recentlyViewed: { productId } },
+      $pull: { recentlyViewed: { productId: objectId } },
     });
 
     // Step 2: Prepend fresh entry and cap at 20 (atomic, no race condition)
@@ -73,7 +76,7 @@ router.post("/:userid/view", async (req, res) => {
       {
         $push: {
           recentlyViewed: {
-            $each: [{ productId, viewedAt: viewedAt ? new Date(viewedAt) : new Date() }],
+            $each: [{ productId: objectId, viewedAt: viewedAt ? new Date(viewedAt) : new Date() }],
             $position: 0,
             $slice: 20,
           },
