@@ -172,7 +172,8 @@ async function handleRecommendations(req, res) {
   }
 }
 
-// Support both /recommendations and /recommendations/:userId
-router.get("/:userId?", handleRecommendations);
+// Support both /recommendations and /recommendations/:userId for Express 5 compatibility
+router.get("/", handleRecommendations);
+router.get("/:userId", handleRecommendations);
 
 module.exports = router;
