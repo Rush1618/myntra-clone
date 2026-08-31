@@ -84,6 +84,58 @@ import { API_BASE_URL } from "@/constants/Api";
 //   },
 // };
 
+const MOCK_PRODUCTS_MAP: Record<string, any> = {
+  "1": {
+    _id: "1",
+    name: "Casual White T-Shirt",
+    brand: "Roadster",
+    price: 499,
+    discount: "60% OFF",
+    description: "Classic white t-shirt made from premium cotton. Perfect for everyday wear with a comfortable regular fit.",
+    sizes: ["S", "M", "L", "XL"],
+    images: [
+      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1562157873-818bc0726f68?w=500&auto=format&fit=crop",
+    ],
+  },
+  "2": {
+    _id: "2",
+    name: "Denim Jacket",
+    brand: "Levis",
+    price: 2499,
+    discount: "40% OFF",
+    description: "Classic denim jacket with a modern twist. Features premium quality denim and comfortable fit.",
+    sizes: ["S", "M", "L", "XL"],
+    images: [
+      "https://images.unsplash.com/photo-1523205771623-e0faa4d2813d?w=500&auto=format&fit=crop",
+    ],
+  },
+  "3": {
+    _id: "3",
+    name: "Summer Dress",
+    brand: "ONLY",
+    price: 1299,
+    discount: "50% OFF",
+    description: "Flowy summer dress perfect for warm weather. Made from lightweight fabric with a flattering cut.",
+    sizes: ["XS", "S", "M", "L"],
+    images: [
+      "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=500&auto=format&fit=crop",
+    ],
+  },
+  "4": {
+    _id: "4",
+    name: "Classic Sneakers",
+    brand: "Nike",
+    price: 3499,
+    discount: "30% OFF",
+    description: "Versatile sneakers that combine style and comfort. Perfect for both casual wear and light exercise.",
+    sizes: ["UK6", "UK7", "UK8", "UK9", "UK10"],
+    images: [
+      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop",
+    ],
+  },
+};
+
 export default function ProductDetails() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
@@ -96,27 +148,25 @@ export default function ProductDetails() {
   const scrollViewRef = useRef<ScrollView>(null);
   const autoScrollTimer = useRef<NodeJS.Timeout>();
   const { user } = useAuth();
-  const [product, setproduct] = useState<any>(null);
+  const productIdKey = String(id || "1");
+  const [product, setproduct] = useState<any>(MOCK_PRODUCTS_MAP[productIdKey] || MOCK_PRODUCTS_MAP["1"]);
   const [iswishlist, setiswishlist] = useState(false);
   useEffect(() => {
-    // Simulate loading time
-
     const fetchproduct = async () => {
       try {
         setIsLoading(true);
-        const product = await axios.get(
-          `${API_BASE_URL}/product/${id}`
-        );
-        setproduct(product.data);
+        const res = await axios.get(`${API_BASE_URL}/product/${id}`);
+        if (res?.data) {
+          setproduct(res.data);
+        }
       } catch (error) {
-        console.log(error);
-        setIsLoading(false);
+        console.log("Product fetch fallback to mock:", error);
       } finally {
         setIsLoading(false);
       }
     };
     fetchproduct();
-  }, []);
+  }, [id]);
 
   useEffect(() => {
     if (!product?._id) {

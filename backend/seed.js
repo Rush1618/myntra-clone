@@ -13,7 +13,7 @@ const categories = [
   },
   {
     name: "Women",
-    image: "https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?w=500&auto=format&fit=crop",
+    image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500&auto=format&fit=crop",
     subcategory: ["Dresses", "Tops", "Ethnic Wear", "Western Wear", "Activewear"]
   },
   {

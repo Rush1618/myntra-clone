@@ -8,117 +8,16 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 
-import { Collapsible } from "@/components/Collapsible";
-import { ExternalLink } from "@/components/ExternalLink";
-import ParallaxScrollView from "@/components/ParallaxScrollView";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
-import { IconSymbol } from "@/components/ui/IconSymbol";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "expo-router";
-import { Search, X } from "lucide-react-native";
+import { Search, X, FolderX, RefreshCw, ShoppingBag } from "lucide-react-native";
 import axios from "axios";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { API_BASE_URL } from "@/constants/Api";
-
-// const categories = [
-//   {
-//     id: 1,
-//     name: "Men",
-//     subcategories: [
-//       "T-Shirts",
-//       "Shirts",
-//       "Jeans",
-//       "Trousers",
-//       "Suits",
-//       "Activewear",
-//     ],
-//     image:
-//       "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=500&auto=format&fit=crop",
-//     products: [
-//       {
-//         id: 1,
-//         name: "Casual White T-Shirt",
-//         brand: "Roadster",
-//         price: 499,
-//         discount: "60% OFF",
-//         image:
-//           "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop",
-//       },
-//       {
-//         id: 2,
-//         name: "Denim Jacket",
-//         brand: "Levis",
-//         price: 2499,
-//         discount: "40% OFF",
-//         image:
-//           "https://images.unsplash.com/photo-1523205771623-e0faa4d2813d?w=500&auto=format&fit=crop",
-//       },
-//     ],
-//   },
-//   {
-//     id: 2,
-//     name: "Women",
-//     subcategories: [
-//       "Dresses",
-//       "Tops",
-//       "Ethnic Wear",
-//       "Western Wear",
-//       "Activewear",
-//     ],
-//     image:
-//       "https://images.unsplash.com/photo-1618244972963-dbad0c4abf18?w=500&auto=format&fit=crop",
-//     products: [
-//       {
-//         id: 3,
-//         name: "Summer Dress",
-//         brand: "ONLY",
-//         price: 1299,
-//         discount: "50% OFF",
-//         image:
-//           "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=500&auto=format&fit=crop",
-//       },
-//     ],
-//   },
-//   {
-//     id: 3,
-//     name: "Kids",
-//     subcategories: [
-//       "Boys Clothing",
-//       "Girls Clothing",
-//       "Infants",
-//       "Toys",
-//       "School Essentials",
-//     ],
-//     image:
-//       "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?w=500&auto=format&fit=crop",
-//     products: [],
-//   },
-//   {
-//     id: 4,
-//     name: "Beauty",
-//     subcategories: [
-//       "Makeup",
-//       "Skincare",
-//       "Haircare",
-//       "Fragrances",
-//       "Personal Care",
-//     ],
-//     image:
-//       "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=500&auto=format&fit=crop",
-//     products: [],
-//   },
-//   {
-//     id: 5,
-//     name: "Accessories",
-//     subcategories: ["Watches", "Bags", "Jewellery", "Sunglasses", "Belts"],
-//     image:
-//       "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop",
-//     products: [],
-//   },
-// ];
+import { fetchWithCache } from "@/utils/apiCache";
 
 export default function TabTwoScreen() {
   const router = useRouter();
@@ -129,36 +28,40 @@ export default function TabTwoScreen() {
     null
   );
   const [isLoading, setIsLoading] = useState(false);
-  const [categories, setcategories] = useState<any>(null);
-  useEffect(() => {
-    const fetchproduct = async () => {
-      try {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [categories, setcategories] = useState<any[] | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  const fetchproduct = useCallback(async (forceRefresh = false) => {
+    try {
+      if (forceRefresh) {
+        setIsRefreshing(true);
+      } else {
         setIsLoading(true);
-        const cat = await axios.get(`${API_BASE_URL}/category`);
-        setcategories(cat.data);
-      } catch (error) {
-        console.log(error);
-        setIsLoading(false);
-      } finally {
-        setIsLoading(false);
       }
-    };
-    fetchproduct();
+      setFetchError(null);
+      const res = await axios.get(`${API_BASE_URL}/category`);
+      const data = res.data;
+      if (Array.isArray(data)) {
+        setcategories(data);
+      } else if (data && Array.isArray(data.categories)) {
+        setcategories(data.categories);
+      } else {
+        setcategories([]);
+      }
+    } catch (error: any) {
+      console.log("Categories fetch error:", error?.message || error);
+      setFetchError(error?.message || "Failed to load categories from server");
+      setcategories([]);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
   }, []);
-  if (isLoading) {
-    return (
-      <View style={[styles.loaderContainer, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
-  if (!categories) {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Text style={{ color: colors.text }}>Categories not found</Text>
-      </View>
-    );
-  }
+
+  useEffect(() => {
+    fetchproduct();
+  }, [fetchproduct]);
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     setSelectedCategory(null);
@@ -239,38 +142,81 @@ export default function TabTwoScreen() {
         </View>
       </View>
 
-      <ScrollView style={[styles.content, { backgroundColor: colors.background }]}>
-        {!selectedCategory && (
-          <View style={styles.categoriesGrid}>
-            {filtercategories?.map((category: any) => (
-              <TouchableOpacity
-                key={category._id}
-                style={[styles.categoryCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}
-                onPress={() => handleCategorySelect(category._id)}
-              >
-                <Image
-                  source={{ uri: category.image }}
-                  style={styles.categoryImage}
-                />
-                <View style={styles.categoryInfo}>
-                  <Text style={[styles.categoryName, { color: colors.text }]}>{category.name}</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    <View style={styles.subcategories}>
-                      {category?.subcategory?.map((sub: any, index: any) => (
-                        <TouchableOpacity
-                          key={index}
-                          style={[styles.subcategoryTag, { backgroundColor: colors.surfaceMuted }]}
-                          onPress={() => handleSubcategorySelect(sub)}
-                        >
-                          <Text style={[styles.subcategoryText, { color: colors.textSecondary }]}>{sub}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </ScrollView>
-                </View>
-              </TouchableOpacity>
-            ))}
+      <ScrollView
+        style={[styles.content, { backgroundColor: colors.background }]}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() => fetchproduct(true)}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
+        {isLoading && !isRefreshing ? (
+          <View style={styles.centerBox}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[styles.loadingText, { color: colors.textMuted }]}>Loading categories...</Text>
           </View>
+        ) : (!categories || categories.length === 0 || filtercategories?.length === 0) ? (
+          <View style={styles.emptyContainer}>
+            <View style={[styles.iconCircle, { backgroundColor: colors.surfaceMuted }]}>
+              <FolderX size={48} color={colors.primary} />
+            </View>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>
+              {searchQuery ? "No Matching Categories" : "No Categories Available"}
+            </Text>
+            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+              {searchQuery
+                ? `No categories or products found matching "${searchQuery}".`
+                : fetchError
+                ? fetchError
+                : "Unable to load categories right now. Please check your connection and tap below to retry."}
+            </Text>
+            <TouchableOpacity
+              style={[styles.retryButton, { backgroundColor: colors.primary }]}
+              onPress={() => fetchproduct(true)}
+              activeOpacity={0.8}
+            >
+              <RefreshCw size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
+            {!selectedCategory && (
+              <View style={styles.categoriesGrid}>
+                {filtercategories?.map((category: any) => (
+                  <TouchableOpacity
+                    key={category._id}
+                    style={[styles.categoryCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}
+                    onPress={() => handleCategorySelect(category._id)}
+                  >
+                    <Image
+                      source={{ uri: category.image }}
+                      style={styles.categoryImage}
+                    />
+                    <View style={styles.categoryInfo}>
+                      <Text style={[styles.categoryName, { color: colors.text }]}>{category.name}</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        <View style={styles.subcategories}>
+                          {category?.subcategory?.map((sub: any, index: any) => (
+                            <TouchableOpacity
+                              key={index}
+                              style={[styles.subcategoryTag, { backgroundColor: colors.surfaceMuted }]}
+                              onPress={() => handleSubcategorySelect(sub)}
+                            >
+                              <Text style={[styles.subcategoryText, { color: colors.textSecondary }]}>{sub}</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      </ScrollView>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </>
         )}
 
         {selectedcategorydata && (
@@ -490,5 +436,58 @@ const styles = StyleSheet.create({
   },
   discount: {
     fontSize: 14,
+  },
+  centerBox: {
+    paddingVertical: 60,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 15,
+  },
+  emptyContainer: {
+    paddingVertical: 60,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconCircle: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 24,
+    maxWidth: 320,
+  },
+  retryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 25,
+    shadowColor: "#FF3F6C",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  retryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "600",
   },
 });
