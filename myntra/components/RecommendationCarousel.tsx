@@ -38,40 +38,7 @@ type Props = {
  * Personalized for logged-in users via browsing history.
  * Falls back to popularity-based sorting for anonymous users / cold-start.
  */
-const FALLBACK_RECOMMENDATIONS = [
-  {
-    _id: "rec_1",
-    name: "Casual White T-Shirt",
-    brand: "Roadster",
-    price: 499,
-    discount: 60,
-    images: ["https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop"],
-  },
-  {
-    _id: "rec_2",
-    name: "Denim Jacket",
-    brand: "Levis",
-    price: 2499,
-    discount: 40,
-    images: ["https://images.unsplash.com/photo-1523205771623-e0faa4d2813d?w=500&auto=format&fit=crop"],
-  },
-  {
-    _id: "rec_3",
-    name: "Summer Dress",
-    brand: "ONLY",
-    price: 1299,
-    discount: 50,
-    images: ["https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=500&auto=format&fit=crop"],
-  },
-  {
-    _id: "rec_4",
-    name: "Classic Sneakers",
-    brand: "Nike",
-    price: 3499,
-    discount: 30,
-    images: ["https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop"],
-  },
-];
+// Fallbacks removed per user directive. Live data only.
 
 export function RecommendationCarousel({
   userId,
@@ -80,7 +47,7 @@ export function RecommendationCarousel({
 }: Props) {
   const { colors } = useAppTheme();
   const router = useRouter();
-  const [products, setProducts] = useState<Product[]>(FALLBACK_RECOMMENDATIONS);
+  const [products, setProducts] = useState<Product[]>([]);
   const [personalized, setPersonalized] = useState(false);
   const isFetching = useRef(false);
 
@@ -99,7 +66,7 @@ export function RecommendationCarousel({
       }
     } catch {
       // Fallback to sample recommendations offline
-      setProducts(FALLBACK_RECOMMENDATIONS);
+      setProducts([]);
     } finally {
       isFetching.current = false;
     }

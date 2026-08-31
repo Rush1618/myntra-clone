@@ -17,62 +17,11 @@ export default function DealPage() {
     fetchDeals();
   }, [title]);
 
-  const DEMO_DEAL_PRODUCTS = [
-    {
-      _id: "deal_1",
-      name: "Casual White T-Shirt",
-      brand: "Roadster",
-      price: 499,
-      discount: 60,
-      images: ["https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop"],
-    },
-    {
-      _id: "deal_2",
-      name: "Crop Top Western Wear",
-      brand: "H&M",
-      price: 499,
-      discount: 40,
-      images: ["https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=500&auto=format&fit=crop"],
-    },
-    {
-      _id: "deal_3",
-      name: "Sports Activewear Shorts",
-      brand: "Puma",
-      price: 499,
-      discount: 65,
-      images: ["https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&auto=format&fit=crop"],
-    },
-    {
-      _id: "deal_4",
-      name: "Summer Floral Dress",
-      brand: "ONLY",
-      price: 1299,
-      discount: 50,
-      images: ["https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=500&auto=format&fit=crop"],
-    },
-    {
-      _id: "deal_5",
-      name: "Denim Jacket",
-      brand: "Levis",
-      price: 2499,
-      discount: 45,
-      images: ["https://images.unsplash.com/photo-1523205771623-e0faa4d2813d?w=500&auto=format&fit=crop"],
-    },
-    {
-      _id: "deal_6",
-      name: "Leather Crossbody Bag",
-      brand: "Caprese",
-      price: 1499,
-      discount: 55,
-      images: ["https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=500&auto=format&fit=crop"],
-    },
-  ];
-
   const fetchDeals = async () => {
     try {
       setLoading(true);
       const res = await axios.get(`${API_BASE_URL}/product`);
-      let allProducts = Array.isArray(res?.data) && res.data.length > 0 ? res.data : DEMO_DEAL_PRODUCTS;
+      let allProducts = Array.isArray(res?.data) && res.data.length > 0 ? res.data : [];
       
       const filterTitle = String(title || "").toLowerCase();
       
@@ -85,17 +34,10 @@ export default function DealPage() {
         });
       }
       
-      setProducts(allProducts.length > 0 ? allProducts : DEMO_DEAL_PRODUCTS);
+      setProducts(allProducts.length > 0 ? allProducts : []);
     } catch (err) {
-      console.log("Deals fetch fallback:", err);
-      let fallback = DEMO_DEAL_PRODUCTS;
-      const filterTitle = String(title || "").toLowerCase();
-      if (filterTitle.includes("599")) {
-        fallback = fallback.filter((p: any) => p.price <= 599);
-      } else {
-        fallback = fallback.filter((p: any) => p.discount >= 40);
-      }
-      setProducts(fallback);
+      console.log("Deals fetch error:", err);
+      setProducts([]);
     } finally {
       setLoading(false);
     }

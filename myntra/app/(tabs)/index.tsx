@@ -100,54 +100,14 @@ const deals = [
   },
 ];
 
-const FALLBACK_HOME_CATEGORIES = [
-  { id: "cat_men", name: "Men", image: "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=500&auto=format&fit=crop" },
-  { id: "cat_women", name: "Women", image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500&auto=format&fit=crop" },
-  { id: "cat_kids", name: "Kids", image: "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?w=500&auto=format&fit=crop" },
-  { id: "cat_beauty", name: "Beauty", image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=500&auto=format&fit=crop" },
-];
-
-const FALLBACK_PRODUCTS = [
-  {
-    _id: "1",
-    name: "Casual White T-Shirt",
-    brand: "Roadster",
-    price: 499,
-    discount: "60% OFF",
-    images: ["https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop"]
-  },
-  {
-    _id: "2",
-    name: "Denim Jacket",
-    brand: "Levis",
-    price: 2499,
-    discount: "40% OFF",
-    images: ["https://images.unsplash.com/photo-1523205771623-e0faa4d2813d?w=500&auto=format&fit=crop"]
-  },
-  {
-    _id: "3",
-    name: "Summer Dress",
-    brand: "ONLY",
-    price: 1299,
-    discount: "50% OFF",
-    images: ["https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=500&auto=format&fit=crop"]
-  },
-  {
-    _id: "4",
-    name: "Classic Sneakers",
-    brand: "Nike",
-    price: 3499,
-    discount: "30% OFF",
-    images: ["https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop"]
-  }
-];
+// Fallbacks removed per user directive. Live data only.
 
 export default function Home() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const [isLoading, setIsLoading] = useState(false);
-  const [product, setproduct] = useState<any>(FALLBACK_PRODUCTS);
-  const [categories, setcategories] = useState<any>(FALLBACK_HOME_CATEGORIES);
+  const [product, setproduct] = useState<any>([]);
+  const [categories, setcategories] = useState<any>([]);
   const [recentlyViewed, setRecentlyViewed] = useState<any[]>([]);
   const { user } = useAuth();
   const handleProductPress = (productId: number) => {
