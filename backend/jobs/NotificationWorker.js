@@ -54,7 +54,9 @@ async function processPendingJobs() {
   }
 }
 
-// Start worker
-processPendingJobs();
+// Start worker only when executed directly or in standalone server mode (not Vercel serverless)
+if (process.env.VERCEL !== "1" && require.main === module) {
+  processPendingJobs();
+}
 
 module.exports = { processPendingJobs };

@@ -33,16 +33,43 @@ app.use("/recently-viewed", RecentlyViewedRoutes);
 app.use("/notifications", NotificationRoutes);
 app.use("/export", ExportRoutes);
 app.use("/recommendations", RecommendationRoutes);
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("Mongodb connected");
-  })
-  .catch((err) => console.log(err));
+// Connect to MongoDB using cached connection for serverless
+let isConnected = false;
+async function connectDB() {
+  if (isConnected || mongoose.connection.readyState >= 1) {
+    isConnected = true;
+    return;
+  }
+  if (!process.env.MONGO_URI) {
+    console.warn("MONGO_URI environment variable is not set in Vercel settings.");
+    return;
+  }
+  await mongoose.connect(process.env.MONGO_URI, {
+    serverSelectionTimeoutMS: 5000,
+  });
+  isConnected = true;
+  console.log("Mongodb connected successfully");
+}
 
-const PORT = process.env.PORT;
-// Start Background Workers
-require("./jobs/NotificationWorker");
-require("./jobs/CartAbandonmentWorker");
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+  } catch (err) {
+    console.error("DB connection error:", err);
+  }
+  next();
+});
 
-app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
+const PORT = process.env.PORT || 5000;
+
+// Start Background Workers only in long-running node environments
+if (process.env.VERCEL !== "1") {
+  require("./jobs/NotificationWorker");
+  require("./jobs/CartAbandonmentWorker");
+}
+
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
+}
+
+module.exports = app;
