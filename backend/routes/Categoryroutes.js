@@ -8,7 +8,7 @@ router.get("/", async (req, res) => {
     res.status(200).json(categories);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: "Something went wrong" });
+    return res.status(500).json({ message: error.message || "Something went wrong", error: String(error) });
   }
 });
 

@@ -16,6 +16,21 @@ async function processPendingJobs() {
 
     for (const job of jobs) {
       try {
+        // Rate limiting: max 5 notifications per user per hour
+        const ONE_HOUR_AGO = new Date(Date.now() - 60 * 60 * 1000);
+        const recentCount = await NotificationJob.countDocuments({
+          userId: job.userId,
+          status: "sent",
+          updatedAt: { $gte: ONE_HOUR_AGO },
+        });
+
+        if (recentCount >= 5) {
+          // Delay to next hour
+          job.nextAttempt = new Date(Date.now() + 60 * 60 * 1000);
+          await job.save();
+          continue;
+        }
+
         await sendPushToUser(job.userId, {
           title: job.title,
           body: job.body,

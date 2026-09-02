@@ -15,11 +15,20 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/myntra.jpg",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.rushabh.myntraclone"
     },
     "web": {
       "bundler": "metro",
-      "output": "static"
+      "output": "static",
+      "name": "Myntra Clone",
+      "shortName": "Myntra",
+      "description": "Shop fashion online — clothes, accessories & more",
+      "themeColor": "#ff3f6c",
+      "backgroundColor": "#ffffff",
+      "display": "standalone",
+      "orientation": "portrait",
+      "favicon": "./assets/images/myntra.jpg"
     },
     "plugins": [
       "expo-router",

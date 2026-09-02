@@ -16,23 +16,14 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 app.use(cors({
-  origin: '*', 
-  credentials: true, 
+  origin: [
+    process.env.FRONTEND_URL || 'https://myntra-clone-frontend.vercel.app',
+    'http://localhost:8081',
+    'http://localhost:3000',
+    'http://localhost:19006',
+  ],
+  credentials: true,
 }));
-app.get("/", (req, res) => {
-  res.send("✅ Myntra backend in working");
-});
-app.use("/user", userrouter);
-app.use("/category", categoryrouter);
-app.use("/product", productrouter);
-app.use("/bag", Bagroutes);
-app.use("/wishlist", Wishlistroutes);
-app.use("/Order", OrderRoutes);
-app.use("/order", OrderRoutes);
-app.use("/recently-viewed", RecentlyViewedRoutes);
-app.use("/notifications", NotificationRoutes);
-app.use("/export", ExportRoutes);
-app.use("/recommendations", RecommendationRoutes);
 // Connect to MongoDB using cached connection for serverless
 let isConnected = false;
 async function connectDB() {
@@ -51,6 +42,7 @@ async function connectDB() {
   console.log("Mongodb connected successfully");
 }
 
+// DB middleware runs BEFORE routes so every request has a connection
 app.use(async (req, res, next) => {
   try {
     await connectDB();
@@ -59,6 +51,21 @@ app.use(async (req, res, next) => {
   }
   next();
 });
+
+app.get("/", (req, res) => {
+  res.send("✅ Myntra backend in working");
+});
+app.use("/user", userrouter);
+app.use("/category", categoryrouter);
+app.use("/product", productrouter);
+app.use("/bag", Bagroutes);
+app.use("/wishlist", Wishlistroutes);
+app.use("/Order", OrderRoutes);
+app.use("/order", OrderRoutes);
+app.use("/recently-viewed", RecentlyViewedRoutes);
+app.use("/notifications", NotificationRoutes);
+app.use("/export", ExportRoutes);
+app.use("/recommendations", RecommendationRoutes);
 
 const PORT = process.env.PORT || 5000;
 
