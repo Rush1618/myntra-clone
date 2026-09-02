@@ -17,7 +17,8 @@ const app = express();
 app.use(express.json());
 app.use(cors({
   origin: [
-    process.env.FRONTEND_URL || 'https://myntra-clone-frontend.vercel.app',
+    process.env.FRONTEND_URL || 'https://myntra-clone-brown-ten.vercel.app',
+    'https://myntra-clone-frontend.vercel.app',
     'http://localhost:8081',
     'http://localhost:3000',
     'http://localhost:19006',
