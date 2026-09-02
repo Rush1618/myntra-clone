@@ -178,6 +178,23 @@ export default function Home() {
         style={styles.banner}
       />
 
+      <View style={{ padding: 15, backgroundColor: "#e8f5e9", margin: 15, borderRadius: 8, borderWidth: 1, borderColor: "#4caf50" }}>
+        <TouchableOpacity 
+          style={{ backgroundColor: "#4caf50", padding: 12, borderRadius: 6, alignItems: "center" }}
+          onPress={async () => {
+            try {
+              alert("Testing...");
+              const res = await axios.get(`${API_BASE_URL}/product`);
+              alert(`Success! Status: ${res.status}. Found ${res.data?.length || 0} products.`);
+            } catch (e: any) {
+              alert(`Failed: ${e.message}`);
+            }
+          }}
+        >
+          <Text style={{ color: "white", fontWeight: "bold", fontSize: 16 }}>TEST BACKEND CONNECTION</Text>
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>SHOP BY CATEGORY</Text>
