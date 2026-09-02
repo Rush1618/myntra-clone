@@ -109,6 +109,7 @@ export default function Home() {
   const [product, setproduct] = useState<any>([]);
   const [categories, setcategories] = useState<any>([]);
   const [recentlyViewed, setRecentlyViewed] = useState<any[]>([]);
+  const [isOnline, setIsOnline] = useState<boolean | null>(null);
   const { user } = useAuth();
   const handleProductPress = (productId: number) => {
     router.push(`/product/${productId}`);
@@ -121,7 +122,9 @@ export default function Home() {
         const prodData = await fetchWithCache(`${API_BASE_URL}/product`);
         if (Array.isArray(catData) && catData.length > 0) setcategories(catData);
         if (Array.isArray(prodData) && prodData.length > 0) setproduct(prodData);
+        setIsOnline(true);
       } catch (error) {
+        setIsOnline(false);
         console.log("Home fetch fallback:", error);
       } finally {
         setIsLoading(false);
@@ -165,7 +168,15 @@ export default function Home() {
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <Text style={[styles.logo, { color: colors.text }]}>MYNTRA</Text>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Text style={[styles.logo, { color: colors.text, marginRight: 8 }]}>MYNTRA</Text>
+          <View style={{
+            width: 8, 
+            height: 8, 
+            borderRadius: 4, 
+            backgroundColor: isOnline === true ? "#4caf50" : isOnline === false ? "#f44336" : "#9e9e9e"
+          }} />
+        </View>
         <TouchableOpacity style={styles.searchButton}>
           <Search size={24} color={colors.icon} />
         </TouchableOpacity>
@@ -177,23 +188,6 @@ export default function Home() {
         }}
         style={styles.banner}
       />
-
-      <View style={{ padding: 15, backgroundColor: "#e8f5e9", margin: 15, borderRadius: 8, borderWidth: 1, borderColor: "#4caf50" }}>
-        <TouchableOpacity 
-          style={{ backgroundColor: "#4caf50", padding: 12, borderRadius: 6, alignItems: "center" }}
-          onPress={async () => {
-            try {
-              alert("Testing...");
-              const res = await axios.get(`${API_BASE_URL}/product`);
-              alert(`Success! Status: ${res.status}. Found ${res.data?.length || 0} products.`);
-            } catch (e: any) {
-              alert(`Failed: ${e.message}`);
-            }
-          }}
-        >
-          <Text style={{ color: "white", fontWeight: "bold", fontSize: 16 }}>TEST BACKEND CONNECTION</Text>
-        </TouchableOpacity>
-      </View>
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
