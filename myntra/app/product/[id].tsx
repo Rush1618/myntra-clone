@@ -11,7 +11,7 @@ import {
   Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
-import { Heart, ShoppingBag } from "lucide-react-native";
+import { Heart, ShoppingBag, ArrowLeft } from "lucide-react-native";
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -294,11 +294,19 @@ export default function ProductDetails() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen 
         options={{
+          headerShown: true,
+          headerTransparent: true,
+          headerTitle: "",
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => router.back()} style={[{ marginLeft: 15, padding: 8, borderRadius: 20 }, Platform.OS !== 'web' && { backgroundColor: 'rgba(255,255,255,0.7)' }]}>
+              <ArrowLeft size={24} color={Platform.OS !== 'web' ? '#000' : colors.text} />
+            </TouchableOpacity>
+          ),
           headerRight: () => (
-            <TouchableOpacity onPress={handleAddwishlist} style={{ marginRight: 15 }}>
+            <TouchableOpacity onPress={handleAddwishlist} style={[{ marginRight: 15, padding: 8, borderRadius: 20 }, Platform.OS !== 'web' && { backgroundColor: 'rgba(255,255,255,0.7)' }]}>
               <Heart
                 size={24}
-                color={iswishlist ? colors.primary : colors.icon}
+                color={iswishlist ? colors.primary : (Platform.OS !== 'web' ? '#000' : colors.icon)}
                 fill={iswishlist ? colors.primary : "none"}
               />
             </TouchableOpacity>

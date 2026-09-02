@@ -1,4 +1,4 @@
-import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform, Dimensions } from "react-native";
 import axios from "axios";
 
@@ -25,7 +25,7 @@ const readStorageValue = async () => {
       return globalThis.localStorage?.getItem(STORAGE_KEY) ?? null;
     }
 
-    return await SecureStore.getItemAsync(STORAGE_KEY);
+    return await AsyncStorage.getItem(STORAGE_KEY);
   } catch {
     return null;
   }
@@ -38,7 +38,7 @@ const writeStorageValue = async (value: string) => {
       return;
     }
 
-    await SecureStore.setItemAsync(STORAGE_KEY, value);
+    await AsyncStorage.setItem(STORAGE_KEY, value);
   } catch {
     return;
   }

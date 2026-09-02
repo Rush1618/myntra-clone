@@ -2,6 +2,7 @@ const express = require("express");
 const User = require("../models/User");
 const Product = require("../models/Product");
 const BrowsingHistory = require("../models/BrowsingHistory");
+const mongoose = require("mongoose");
 
 const router = express.Router();
 const MAX_RECENTLY_VIEWED = 20;
@@ -15,7 +16,7 @@ const normalizeEntries = (entries = []) => {
   const merged = new Map();
 
   entries.forEach((entry) => {
-    const productId = entry?.productId?.toString?.() ?? entry?.productId;
+    const productId = entry?.productId?._id?.toString?.() ?? entry?.productId?.toString?.() ?? entry?.productId;
     if (!productId) {
       return;
     }
@@ -40,6 +41,27 @@ const mergeHistory = (existingEntries = [], incomingEntries = []) => {
   return normalizeEntries([...existingEntries, ...incomingEntries]);
 };
 
+const updateHistoryAtomically = async (userId, updaterFn) => {
+  const maxRetries = 3;
+  let attempt = 0;
+  while (attempt < maxRetries) {
+    try {
+      const user = await User.findById(userId);
+      if (!user) return null;
+      user.recentlyViewed = updaterFn(user.recentlyViewed || []);
+      await user.save();
+      return user;
+    } catch (err) {
+      if (err.name === "VersionError") {
+        attempt++;
+        if (attempt >= maxRetries) throw err;
+      } else {
+        throw err;
+      }
+    }
+  }
+};
+
 router.get("/:userid", async (req, res) => {
   try {
     const user = await User.findById(req.params.userid).populate(
@@ -62,30 +84,14 @@ router.post("/:userid/view", async (req, res) => {
   if (!productId) return res.status(400).json({ message: "productId required" });
 
   try {
-    const mongoose = require("mongoose");
     const objectId = new mongoose.Types.ObjectId(productId);
-
-    // Step 1: Remove any existing entry for this product (atomic dedup)
-    await User.findByIdAndUpdate(req.params.userid, {
-      $pull: { recentlyViewed: { productId: objectId } },
+    
+    // Atomic update with retry to prevent race conditions on cross-device sync
+    const updatedUser = await updateHistoryAtomically(req.params.userid, (current) => {
+      return mergeHistory(current, [{ productId: objectId, viewedAt }]);
     });
 
-    // Step 2: Prepend fresh entry and cap at 20 (atomic, no race condition)
-    const updated = await User.findByIdAndUpdate(
-      req.params.userid,
-      {
-        $push: {
-          recentlyViewed: {
-            $each: [{ productId: objectId, viewedAt: viewedAt ? new Date(viewedAt) : new Date() }],
-            $position: 0,
-            $slice: 20,
-          },
-        },
-      },
-      { new: true }
-    );
-
-    if (!updated) return res.status(404).json({ message: "User not found" });
+    if (!updatedUser) return res.status(404).json({ message: "User not found" });
 
     // Record browsing history with strict 50-item limit per user and increment viewCount
     try {
@@ -99,7 +105,6 @@ router.post("/:userid/view", async (req, res) => {
         const catName = product.categoryName || product.category?.name || "General";
         const catId = product.category?._id || product.category;
 
-        // Upsert unique product view for user
         await BrowsingHistory.findOneAndUpdate(
           { userId: req.params.userid, productId },
           {
@@ -112,7 +117,6 @@ router.post("/:userid/view", async (req, res) => {
           { upsert: true, new: true }
         );
 
-        // Enforce maximum 50 unique views per user
         const totalViews = await BrowsingHistory.countDocuments({ userId: req.params.userid });
         if (totalViews > 50) {
           const excess = totalViews - 50;
@@ -144,14 +148,13 @@ router.post("/:userid/merge", async (req, res) => {
   const incomingEntries = Array.isArray(req.body?.items) ? req.body.items : [];
 
   try {
-    const user = await User.findById(req.params.userid);
+    const updatedUser = await updateHistoryAtomically(req.params.userid, (current) => {
+      return mergeHistory(current, incomingEntries);
+    });
 
-    if (!user) {
+    if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });
     }
-
-    user.recentlyViewed = mergeHistory(user.recentlyViewed, incomingEntries);
-    await user.save();
 
     const populated = await User.findById(req.params.userid).populate(
       "recentlyViewed.productId"

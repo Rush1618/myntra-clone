@@ -9,6 +9,7 @@ import {
   ScrollView,
   ActivityIndicator,
   RefreshControl,
+  useWindowDimensions,
 } from "react-native";
 
 import React, { useEffect, useState, useCallback } from "react";
@@ -22,6 +23,9 @@ import { fetchWithCache } from "@/utils/apiCache";
 export default function TabTwoScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 1024;
+  const isTablet = width >= 768;
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
@@ -96,22 +100,25 @@ export default function TabTwoScreen() {
   const selectedcategorydata = selectedCategory
     ? categories?.find((cat: any) => cat._id === selectedCategory)
     : null;
+  const productColumns = isDesktop ? 4 : isTablet ? 3 : 2;
+  const productCardWidth = `${Math.floor(100 / productColumns) - 1}%` as any;
+
   const renderProducts = (products: any) => {
     return products?.map((product: any) => {
       if (!product || typeof product === 'string') return null;
       return (
         <TouchableOpacity
           key={product._id}
-          style={styles.productCard}
+          style={[styles.productCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, width: productCardWidth }]}
           onPress={() => router.push(`/product/${product._id}`)}
         >
           <Image source={{ uri: product.images?.[0] }} style={styles.productImage} />
           <View style={styles.productInfo}>
-            <Text style={styles.brandName}>{product.brand}</Text>
+            <Text style={[styles.brandName, { color: colors.textMuted }]}>{product.brand}</Text>
             <Text style={[styles.productName, { color: colors.text }]}>{product.name}</Text>
             <View style={styles.priceRow}>
               <Text style={[styles.price, { color: colors.text }]}>₹{product.price}</Text>
-              {product.discount ? <Text style={styles.discount}>{product.discount}% OFF</Text> : null}
+              {product.discount ? <Text style={[styles.discount, { color: colors.primary }]}>{product.discount}% OFF</Text> : null}
             </View>
           </View>
         </TouchableOpacity>
@@ -120,374 +127,285 @@ export default function TabTwoScreen() {
   };
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Categories</Text>
-      </View>
+      {/* Header — only on mobile */}
+      {!isDesktop && (
+        <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Categories</Text>
+        </View>
+      )}
 
+      {/* Search Bar */}
       <View style={[styles.searchContainer, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
-        <View style={[styles.searchInputContainer, { backgroundColor: colors.inputBackground }]}>
-          <Search size={20} color={colors.iconMuted} style={styles.searchIcon} />
-          <TextInput
-            style={[styles.searchInput, { color: colors.inputText }]}
-            placeholder="Search for products, brands and more"
-            placeholderTextColor={colors.placeholder}
-            value={searchQuery}
-            onChangeText={handleSearch}
-          />
-          {searchQuery !== "" && (
-            <TouchableOpacity onPress={clearSearch}>
-              <X size={20} color={colors.iconMuted} />
-            </TouchableOpacity>
-          )}
+        <View style={[styles.searchInputWrapper, isDesktop && { maxWidth: 800, alignSelf: 'center', width: '100%' }]}>
+          <View style={[styles.searchInputContainer, { backgroundColor: colors.inputBackground }]}>
+            <Search size={20} color={colors.iconMuted} style={styles.searchIcon} />
+            <TextInput
+              style={[styles.searchInput, { color: colors.inputText }]}
+              placeholder="Search for products, brands and more"
+              placeholderTextColor={colors.placeholder}
+              value={searchQuery}
+              onChangeText={handleSearch}
+            />
+            {searchQuery !== "" && (
+              <TouchableOpacity onPress={clearSearch}>
+                <X size={20} color={colors.iconMuted} />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </View>
 
-      <ScrollView
-        style={[styles.content, { backgroundColor: colors.background }]}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={() => fetchproduct(true)}
-            tintColor={colors.primary}
-            colors={[colors.primary]}
-          />
-        }
-      >
-        {isLoading && !isRefreshing ? (
-          <View style={styles.centerBox}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={[styles.loadingText, { color: colors.textMuted }]}>Loading categories...</Text>
-          </View>
-        ) : (!categories || categories.length === 0 || filtercategories?.length === 0) ? (
-          <View style={styles.emptyContainer}>
-            <View style={[styles.iconCircle, { backgroundColor: colors.surfaceMuted }]}>
-              <FolderX size={48} color={colors.primary} />
-            </View>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>
-              {searchQuery ? "No Matching Categories" : "No Categories Available"}
-            </Text>
-            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-              {searchQuery
-                ? `No categories or products found matching "${searchQuery}".`
-                : fetchError
-                ? fetchError
-                : "Unable to load categories right now. Please check your connection and tap below to retry."}
-            </Text>
+      {/* Main content area — desktop: 2 column (sidebar + products), mobile: stacked */}
+      <View style={[styles.mainArea, isDesktop && styles.desktopMainArea]}>
+
+        {/* Desktop left sidebar: category filter list */}
+        {isDesktop && (
+          <View style={[styles.filterSidebar, { backgroundColor: colors.surface, borderRightColor: colors.border }]}>
+            <Text style={[styles.filterTitle, { color: colors.text }]}>CATEGORIES</Text>
             <TouchableOpacity
-              style={[styles.retryButton, { backgroundColor: colors.primary }]}
-              onPress={() => fetchproduct(true)}
-              activeOpacity={0.8}
+              style={[styles.filterItem, !selectedCategory && { backgroundColor: colors.primary + '18' }]}
+              onPress={() => { setSelectedCategory(null); setSelectedSubcategory(null); }}
             >
-              <RefreshCw size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-              <Text style={styles.retryButtonText}>Retry</Text>
+              <Text style={[styles.filterItemText, { color: !selectedCategory ? colors.primary : colors.text }, !selectedCategory && { fontWeight: '700' }]}>All</Text>
             </TouchableOpacity>
-          </View>
-        ) : (
-          <>
-            {!selectedCategory && (
-              <View style={styles.categoriesGrid}>
-                {filtercategories?.map((category: any) => (
+            {categories?.map((cat: any) => (
+              <TouchableOpacity
+                key={cat._id}
+                style={[styles.filterItem, selectedCategory === cat._id && { backgroundColor: colors.primary + '18' }]}
+                onPress={() => handleCategorySelect(cat._id)}
+              >
+                <Text style={[styles.filterItemText, { color: selectedCategory === cat._id ? colors.primary : colors.text }, selectedCategory === cat._id && { fontWeight: '700' }]}>{cat.name}</Text>
+              </TouchableOpacity>
+            ))}
+            {selectedcategorydata && (
+              <>
+                <Text style={[styles.filterSubTitle, { color: colors.textMuted }]}>SUBCATEGORIES</Text>
+                {selectedcategorydata.subcategory.map((sub: any, i: number) => (
                   <TouchableOpacity
-                    key={category._id}
-                    style={[styles.categoryCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}
-                    onPress={() => handleCategorySelect(category._id)}
+                    key={i}
+                    style={[styles.filterItem, selectedSubcategory === sub && { backgroundColor: colors.primary + '18' }]}
+                    onPress={() => handleSubcategorySelect(sub)}
                   >
-                    <Image
-                      source={{ uri: category.image }}
-                      style={styles.categoryImage}
-                    />
-                    <View style={styles.categoryInfo}>
-                      <Text style={[styles.categoryName, { color: colors.text }]}>{category.name}</Text>
-                      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                        <View style={styles.subcategories}>
-                          {category?.subcategory?.map((sub: any, index: any) => (
-                            <TouchableOpacity
-                              key={index}
-                              style={[styles.subcategoryTag, { backgroundColor: colors.surfaceMuted }]}
-                              onPress={() => handleSubcategorySelect(sub)}
-                            >
-                              <Text style={[styles.subcategoryText, { color: colors.textSecondary }]}>{sub}</Text>
-                            </TouchableOpacity>
-                          ))}
-                        </View>
-                      </ScrollView>
-                    </View>
+                    <Text style={[styles.filterItemText, { color: selectedSubcategory === sub ? colors.primary : colors.textSecondary }, selectedSubcategory === sub && { fontWeight: '700' }]}>{sub}</Text>
                   </TouchableOpacity>
                 ))}
-              </View>
+              </>
             )}
-          </>
-        )}
-
-        {selectedcategorydata && (
-          <View style={styles.categoryDetail}>
-            <View style={styles.categoryHeader}>
-              <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => setSelectedCategory(null)}
-              >
-                <Text style={[styles.backButtonText, { color: colors.primary }]}>← Back to Categories</Text>
-              </TouchableOpacity>
-              <Text style={[styles.categoryTitle, { color: colors.text }]}>
-                {selectedcategorydata.name}
-              </Text>
-            </View>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.subcategoriesScroll}
-            >
-              {selectedcategorydata.subcategory.map((sub: any, index: any) => (
-                <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles.subcategoryButton,
-                    { backgroundColor: colors.surfaceMuted },
-                    selectedSubcategory === sub && { backgroundColor: colors.primary },
-                  ]}
-                  onPress={() => handleSubcategorySelect(sub)}
-                >
-                  <Text
-                    style={[
-                      styles.subcategoryButtonText,
-                      { color: colors.text },
-                      selectedSubcategory === sub && { color: colors.primaryText },
-                    ]}
-                  >
-                    {sub}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <View style={styles.productsGrid}>
-              {renderProducts(
-                selectedcategorydata?.productId?.filter((p: any) => {
-                  if (!selectedSubcategory) return true;
-                  const subLower = selectedSubcategory.toLowerCase();
-                  // Strip the "s" off the end of "T-Shirts" or "Shirts" to make matching easier on demo data
-                  const searchTerm = subLower.endsWith('s') ? subLower.slice(0, -1) : subLower;
-                  return (
-                    p.name.toLowerCase().includes(searchTerm) || 
-                    (p.description && p.description.toLowerCase().includes(searchTerm))
-                  );
-                })
-              )}
-            </View>
           </View>
         )}
-      </ScrollView>
+
+        {/* Right/main: products */}
+        <ScrollView
+          style={[styles.content, { backgroundColor: colors.background }]}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={() => fetchproduct(true)}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
+        >
+          {isLoading && !isRefreshing ? (
+            <View style={styles.centerBox}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={[styles.loadingText, { color: colors.textMuted }]}>Loading categories...</Text>
+            </View>
+          ) : (!categories || categories.length === 0 || filtercategories?.length === 0) ? (
+            <View style={styles.emptyContainer}>
+              <View style={[styles.iconCircle, { backgroundColor: colors.surfaceMuted }]}>
+                <FolderX size={48} color={colors.primary} />
+              </View>
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                {searchQuery ? "No Matching Categories" : "No Categories Available"}
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+                {searchQuery
+                  ? `No categories or products found matching "${searchQuery}".`
+                  : fetchError
+                  ? fetchError
+                  : "Unable to load categories. Please retry."}
+              </Text>
+              <TouchableOpacity
+                style={[styles.retryButton, { backgroundColor: colors.primary }]}
+                onPress={() => fetchproduct(true)}
+                activeOpacity={0.8}
+              >
+                <RefreshCw size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
+              {/* Mobile: category cards grid */}
+              {!isDesktop && !selectedCategory && (
+                <View style={styles.categoriesGrid}>
+                  {filtercategories?.map((category: any) => (
+                    <TouchableOpacity
+                      key={category._id}
+                      style={[styles.categoryCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}
+                      onPress={() => handleCategorySelect(category._id)}
+                    >
+                      <Image source={{ uri: category.image }} style={styles.categoryImage} />
+                      <View style={styles.categoryInfo}>
+                        <Text style={[styles.categoryName, { color: colors.text }]}>{category.name}</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                          <View style={styles.subcategories}>
+                            {category?.subcategory?.map((sub: any, index: any) => (
+                              <TouchableOpacity
+                                key={index}
+                                style={[styles.subcategoryTag, { backgroundColor: colors.surfaceMuted }]}
+                                onPress={() => handleSubcategorySelect(sub)}
+                              >
+                                <Text style={[styles.subcategoryText, { color: colors.textSecondary }]}>{sub}</Text>
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+                        </ScrollView>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </>
+          )}
+
+          {/* Category detail: mobile shows back button + subcategory chips; desktop uses sidebar for that */}
+          {selectedcategorydata && (
+            <View style={styles.categoryDetail}>
+              {!isDesktop && (
+                <View style={styles.categoryHeader}>
+                  <TouchableOpacity style={styles.backButton} onPress={() => setSelectedCategory(null)}>
+                    <Text style={[styles.backButtonText, { color: colors.primary }]}>← Back to Categories</Text>
+                  </TouchableOpacity>
+                  <Text style={[styles.categoryTitle, { color: colors.text }]}>{selectedcategorydata.name}</Text>
+                </View>
+              )}
+              {isDesktop && (
+                <Text style={[styles.categoryTitle, { color: colors.text, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }]}>{selectedcategorydata.name}</Text>
+              )}
+              {!isDesktop && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.subcategoriesScroll}>
+                  {selectedcategorydata.subcategory.map((sub: any, index: any) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={[
+                        styles.subcategoryButton,
+                        { backgroundColor: colors.surfaceMuted },
+                        selectedSubcategory === sub && { backgroundColor: colors.primary },
+                      ]}
+                      onPress={() => handleSubcategorySelect(sub)}
+                    >
+                      <Text style={[styles.subcategoryButtonText, { color: colors.text }, selectedSubcategory === sub && { color: colors.primaryText }]}>
+                        {sub}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
+              <View style={[styles.productsGrid, isDesktop && { paddingHorizontal: 16 }]}>
+                {renderProducts(
+                  selectedcategorydata?.productId?.filter((p: any) => {
+                    if (!selectedSubcategory) return true;
+                    const subLower = selectedSubcategory.toLowerCase();
+                    const searchTerm = subLower.endsWith('s') ? subLower.slice(0, -1) : subLower;
+                    return (
+                      p.name.toLowerCase().includes(searchTerm) ||
+                      (p.description && p.description.toLowerCase().includes(searchTerm))
+                    );
+                  })
+                )}
+              </View>
+            </View>
+          )}
+
+          {/* Desktop: if no category selected, show all products from all categories in grid */}
+          {isDesktop && !selectedCategory && (
+            <View style={[styles.productsGrid, { padding: 16 }]}>
+              {renderProducts(
+                categories?.flatMap((cat: any) => cat.productId || []).filter(
+                  (p: any, i: number, arr: any[]) => p && arr.findIndex((x: any) => x._id === p._id) === i
+                )
+              )}
+            </View>
+          )}
+        </ScrollView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  loaderContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+  container: { flex: 1 },
+  header: { padding: 15, paddingTop: 50, borderBottomWidth: 1 },
+  headerTitle: { fontSize: 24, fontWeight: "bold" },
+  searchContainer: { padding: 12, borderBottomWidth: 1 },
+  searchInputWrapper: {},
+  searchInputContainer: { flexDirection: "row", alignItems: "center", borderRadius: 10, padding: 10 },
+  searchIcon: { marginRight: 10 },
+  searchInput: { flex: 1, fontSize: 16 },
+  // Desktop 2-col layout
+  mainArea: { flex: 1 },
+  desktopMainArea: { flexDirection: 'row' },
+  filterSidebar: {
+    width: 220,
+    borderRightWidth: 1,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
-  container: {
-    flex: 1,
-  },
-  header: {
-    padding: 15,
-    paddingTop: 50,
-    borderBottomWidth: 1,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-  },
-  searchContainer: {
-    padding: 15,
-    borderBottomWidth: 1,
-  },
-  searchInputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 10,
-    padding: 10,
-  },
-  searchIcon: {
-    marginRight: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-  },
-  content: {
-    flex: 1,
-  },
-  categoriesGrid: {
-    padding: 15,
-  },
+  filterTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 1.5, paddingHorizontal: 16, paddingBottom: 8, opacity: 0.6 },
+  filterSubTitle: { fontSize: 10, fontWeight: '700', letterSpacing: 1.5, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 4, opacity: 0.5 },
+  filterItem: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 6, marginHorizontal: 8, marginBottom: 2 },
+  filterItemText: { fontSize: 14 },
+  content: { flex: 1 },
+  categoriesGrid: { padding: 15 },
   categoryCard: {
     borderRadius: 10,
     marginBottom: 15,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
     overflow: "hidden",
   },
-  categoryImage: {
-    width: "100%",
-    height: 150,
-  },
-  categoryInfo: {
-    padding: 15,
-  },
-  categoryName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  subcategories: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  subcategoryTag: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  subcategoryText: {
-    fontSize: 14,
-  },
-  categoryDetail: {
-    flex: 1,
-    padding: 15,
-  },
-  categoryHeader: {
-    marginBottom: 15,
-  },
-  backButton: {
-    marginBottom: 10,
-  },
-  backButtonText: {
-    fontSize: 16,
-  },
-  categoryTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-  },
-  subcategoriesScroll: {
-    marginBottom: 15,
-  },
-  subcategoryButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginRight: 10,
-  },
-  subcategoryButtonText: {
-    fontSize: 14,
-  },
-  productsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
+  categoryImage: { width: "100%", height: 150 },
+  categoryInfo: { padding: 15 },
+  categoryName: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
+  subcategories: { flexDirection: "row", flexWrap: "wrap" },
+  subcategoryTag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 15, marginRight: 8, marginBottom: 8 },
+  subcategoryText: { fontSize: 14 },
+  categoryDetail: { flex: 1 },
+  categoryHeader: { padding: 15 },
+  backButton: { marginBottom: 10 },
+  backButtonText: { fontSize: 16 },
+  categoryTitle: { fontSize: 22, fontWeight: "bold" },
+  subcategoriesScroll: { paddingHorizontal: 15, marginBottom: 15 },
+  subcategoryButton: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, marginRight: 10 },
+  subcategoryButtonText: { fontSize: 14 },
+  productsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, padding: 12 },
   productCard: {
-    width: "48%",
     borderRadius: 10,
-    marginBottom: 15,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    marginBottom: 4,
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
     overflow: "hidden",
   },
-  productImage: {
-    width: "100%",
-    height: 200,
-    resizeMode: "cover",
-  },
-  productInfo: {
-    padding: 10,
-  },
-  brandName: {
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  productName: {
-    fontSize: 16,
-    marginBottom: 8,
-  },
-  priceRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  price: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginRight: 8,
-  },
-  discount: {
-    fontSize: 14,
-  },
-  centerBox: {
-    paddingVertical: 60,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 15,
-  },
-  emptyContainer: {
-    paddingVertical: 60,
-    paddingHorizontal: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 20,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    textAlign: "center",
-    lineHeight: 20,
-    marginBottom: 24,
-    maxWidth: 320,
-  },
-  retryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 25,
-    shadowColor: "#FF3F6C",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  retryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "600",
-  },
+  productImage: { width: "100%", height: 200, resizeMode: "cover" },
+  productInfo: { padding: 10 },
+  brandName: { fontSize: 13, marginBottom: 4 },
+  productName: { fontSize: 14, marginBottom: 6 },
+  priceRow: { flexDirection: "row", alignItems: "center" },
+  price: { fontSize: 14, fontWeight: "bold", marginRight: 8 },
+  discount: { fontSize: 13 },
+  centerBox: { paddingVertical: 60, alignItems: "center", justifyContent: "center" },
+  loadingText: { marginTop: 12, fontSize: 15 },
+  emptyContainer: { paddingVertical: 60, paddingHorizontal: 24, alignItems: "center", justifyContent: "center" },
+  iconCircle: { width: 90, height: 90, borderRadius: 45, alignItems: "center", justifyContent: "center", marginBottom: 20 },
+  emptyTitle: { fontSize: 20, fontWeight: "700", textAlign: "center", marginBottom: 8 },
+  emptySubtitle: { fontSize: 14, textAlign: "center", lineHeight: 20, marginBottom: 24, maxWidth: 320 },
+  retryButton: { flexDirection: "row", alignItems: "center", paddingHorizontal: 24, paddingVertical: 12, borderRadius: 25, elevation: 4 },
+  retryButtonText: { color: "#FFFFFF", fontSize: 15, fontWeight: "600" },
+  loaderContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
 });
