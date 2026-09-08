@@ -41,6 +41,7 @@ export default function Wishlist() {
   const { colors } = useAppTheme();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
+  const isTablet = width >= 768;
   const [wishlist, setwishlist] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   useEffect(() => {
@@ -104,12 +105,7 @@ export default function Wishlist() {
       </View>
     );
   }
-  const isTablet = width >= 768;
-  const numColumns = isDesktop ? 4 : isTablet ? 3 : 2;
-  const gridPadding = 16;
-  const gridGap = 12;
-  const availableWidth = isDesktop ? Math.min(width, 1200) - gridPadding * 2 : width - gridPadding * 2;
-  const cardWidth = Math.max(140, Math.floor((availableWidth - (numColumns - 1) * gridGap) / numColumns));
+  const cardWidth = isDesktop ? '23.5%' : isTablet ? '31.5%' : '47.5%';
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -188,19 +184,20 @@ const styles = StyleSheet.create({
   gridContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    justifyContent: "space-between",
+    rowGap: 10,
     paddingVertical: 8,
   },
   desktopCard: {
-    borderRadius: 10,
+    borderRadius: 8,
     overflow: "hidden",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 3,
+    elevation: 2,
     marginBottom: 4,
   },
-  desktopCardImage: { width: '100%', height: 220 },
+  desktopCardImage: { width: '100%', height: 135 },
   removeBtn: {
     flexDirection: 'row',
     alignItems: 'center',

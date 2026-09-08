@@ -100,12 +100,8 @@ export default function TabTwoScreen() {
   const selectedcategorydata = selectedCategory
     ? categories?.find((cat: any) => cat._id === selectedCategory)
     : null;
-  const productColumns = isDesktop ? 4 : isTablet ? 3 : 2;
-  const mainWidth = isDesktop ? width - 220 : width;
-  const gridGap = 12;
-  const availableGridWidth = mainWidth - 24;
-  const productCardWidth = Math.max(130, Math.floor((availableGridWidth - (productColumns - 1) * gridGap) / productColumns));
-  const categoryCardWidth = Math.floor((width - 30 - 12) / 2);
+  const productCardWidth = isDesktop ? '23.5%' : isTablet ? '31.5%' : '47.5%';
+  const categoryCardWidth = isDesktop ? '23.5%' : '47.5%';
 
   const renderProducts = (products: any) => {
     return products?.map((product: any) => {
@@ -362,22 +358,22 @@ const styles = StyleSheet.create({
   filterItem: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 6, marginHorizontal: 8, marginBottom: 2 },
   filterItemText: { fontSize: 14 },
   content: { flex: 1 },
-  categoriesGrid: { padding: 15, flexDirection: "row", flexWrap: "wrap", gap: 12 },
+  categoriesGrid: { padding: 12, flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 10 },
   categoryCard: {
-    borderRadius: 10,
-    marginBottom: 15,
+    borderRadius: 8,
+    marginBottom: 10,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
     overflow: "hidden",
   },
-  categoryImage: { width: "100%", height: 150 },
-  categoryInfo: { padding: 15 },
-  categoryName: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
+  categoryImage: { width: "100%", height: 110 },
+  categoryInfo: { padding: 8 },
+  categoryName: { fontSize: 14, fontWeight: "bold", marginBottom: 6 },
   subcategories: { flexDirection: "row", flexWrap: "wrap" },
-  subcategoryTag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 15, marginRight: 8, marginBottom: 8 },
-  subcategoryText: { fontSize: 14 },
+  subcategoryTag: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, marginRight: 6, marginBottom: 6 },
+  subcategoryText: { fontSize: 12 },
   categoryDetail: { flex: 1 },
   categoryHeader: { padding: 15 },
   backButton: { marginBottom: 10 },
@@ -386,23 +382,23 @@ const styles = StyleSheet.create({
   subcategoriesScroll: { paddingHorizontal: 15, marginBottom: 15 },
   subcategoryButton: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, marginRight: 10 },
   subcategoryButtonText: { fontSize: 14 },
-  productsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, padding: 12 },
+  productsGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 10, padding: 12 },
   productCard: {
-    borderRadius: 10,
+    borderRadius: 8,
     marginBottom: 4,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
     overflow: "hidden",
   },
-  productImage: { width: "100%", height: 200, resizeMode: "cover" },
-  productInfo: { padding: 10 },
-  brandName: { fontSize: 13, marginBottom: 4 },
-  productName: { fontSize: 14, marginBottom: 6 },
+  productImage: { width: "100%", height: 135, resizeMode: "cover" },
+  productInfo: { padding: 8 },
+  brandName: { fontSize: 11, marginBottom: 2 },
+  productName: { fontSize: 12, lineHeight: 16, marginBottom: 4 },
   priceRow: { flexDirection: "row", alignItems: "center" },
-  price: { fontSize: 14, fontWeight: "bold", marginRight: 8 },
-  discount: { fontSize: 13 },
+  price: { fontSize: 13, fontWeight: "bold", marginRight: 6 },
+  discount: { fontSize: 11 },
   centerBox: { paddingVertical: 60, alignItems: "center", justifyContent: "center" },
   loadingText: { marginTop: 12, fontSize: 15 },
   emptyContainer: { paddingVertical: 60, paddingHorizontal: 24, alignItems: "center", justifyContent: "center" },

@@ -13,8 +13,7 @@ export default function DealPage() {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
   const isTablet = width >= 768;
-  const numColumns = isDesktop ? 4 : isTablet ? 3 : 2;
-  const cardWidth = Math.max(130, Math.floor((Math.min(width, 1200) - 30 - (numColumns - 1) * 12) / numColumns));
+  const cardWidth = isDesktop ? '23.5%' : isTablet ? '31.5%' : '47.5%';
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -105,22 +104,23 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 20, fontWeight: "bold" },
   grid: {
-    padding: 15,
+    padding: 12,
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    justifyContent: "space-between",
+    rowGap: 10,
   },
   productCard: {
-    borderRadius: 10,
+    borderRadius: 8,
     marginBottom: 4,
-    elevation: 3,
+    elevation: 2,
     overflow: "hidden",
   },
-  productImage: { width: "100%", height: 200, resizeMode: "cover" },
-  productInfo: { padding: 10 },
-  brandName: { fontSize: 12, color: "#666", marginBottom: 4 },
-  productName: { fontSize: 14, marginBottom: 8 },
+  productImage: { width: "100%", height: 135, resizeMode: "cover" },
+  productInfo: { padding: 8 },
+  brandName: { fontSize: 11, color: "#666", marginBottom: 2 },
+  productName: { fontSize: 12, lineHeight: 16, marginBottom: 4 },
   priceRow: { flexDirection: "row", alignItems: "center" },
-  price: { fontSize: 14, fontWeight: "bold", marginRight: 8 },
-  discount: { fontSize: 12, color: "#ff3f6c" },
+  price: { fontSize: 13, fontWeight: "bold", marginRight: 6 },
+  discount: { fontSize: 11, color: "#ff3f6c" },
 });

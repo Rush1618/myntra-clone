@@ -28,11 +28,7 @@ export default function RecentlyViewedScreen() {
   const [items, setItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const numColumns = width >= 960 ? 4 : width >= 600 ? 3 : 2;
-  const gridPadding = 24;
-  const gridGap = 12;
-  const gridWidth = Math.min(width, 1100) - gridPadding;
-  const cardWidth = Math.max(130, Math.floor((gridWidth - (numColumns - 1) * gridGap) / numColumns));
+  const cardWidth = width >= 960 ? '23.5%' : width >= 600 ? '31.5%' : '47.5%';
 
   useFocusEffect(
     React.useCallback(() => {
@@ -180,20 +176,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "flex-start",
-    gap: 12,
+    justifyContent: "space-between",
+    rowGap: 10,
   },
   card: {
-    marginBottom: 16,
-    borderRadius: 12,
+    marginBottom: 10,
+    borderRadius: 8,
     borderWidth: 1,
-    padding: 10,
+    padding: 8,
   },
   image: {
     width: "100%",
-    height: 200,
-    borderRadius: 10,
-    marginBottom: 8,
+    height: 135,
+    borderRadius: 6,
+    marginBottom: 6,
   },
   brand: {
     fontSize: 12,

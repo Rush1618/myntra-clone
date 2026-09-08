@@ -92,13 +92,8 @@ export default function Home() {
     }, [user?._id])
   );
 
-  // Responsive grid columns
-  const productColumns = isDesktop ? 4 : isTablet ? 3 : 2;
-  const mainWidth = isDesktop ? Math.min(width, 1200) - 248 : Math.min(width, 1200);
-  const sectionPadding = 30;
-  const gridGap = 12;
-  const availableGridWidth = mainWidth - sectionPadding;
-  const productCardWidth = Math.max(140, Math.floor((availableGridWidth - (productColumns - 1) * gridGap) / productColumns));
+  // Responsive grid setup
+  const productCardWidth = isDesktop ? '23.5%' : isTablet ? '31.5%' : '47.5%';
   const maxContentWidth = isDesktop ? 1200 : '100%';
 
   return (
@@ -406,43 +401,46 @@ const styles = StyleSheet.create({
   productsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    justifyContent: "space-between",
+    rowGap: 10,
   },
   productCard: {
-    marginBottom: 12,
-    borderRadius: 10,
+    marginBottom: 10,
+    borderRadius: 8,
     overflow: "hidden",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
   productImage: {
     width: "100%",
-    height: 200,
+    height: 135,
+    resizeMode: "cover",
   },
   productInfo: {
-    padding: 10,
+    padding: 8,
   },
   brandName: {
-    fontSize: 13,
+    fontSize: 11,
     marginBottom: 2,
   },
   productName: {
-    fontSize: 14,
-    marginBottom: 5,
+    fontSize: 12,
+    lineHeight: 16,
+    marginBottom: 4,
   },
   priceRow: {
     flexDirection: "row",
     alignItems: "center",
   },
   productPrice: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: "bold",
-    marginRight: 8,
+    marginRight: 6,
   },
   discount: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: "500",
   },
   recentCard: {
