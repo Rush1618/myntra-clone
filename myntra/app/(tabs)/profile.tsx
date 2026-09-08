@@ -22,7 +22,7 @@ import {
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { ThemeToggle, HeaderThemeToggle } from "@/components/ui/ThemeToggle";
 
 const menuItems = [
   { icon: Package, label: "Orders", route: "/orders" },
@@ -48,21 +48,24 @@ export default function Profile() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {!isDesktop && (
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={[styles.header, { borderBottomColor: colors.border, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }]}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
+          <HeaderThemeToggle />
         </View>
       )}
 
-      <ScrollView contentContainerStyle={[styles.scrollContent, isDesktop && styles.desktopScrollContent]}>
-        <View style={[styles.innerCard, isDesktop && styles.innerCardDesktop, { backgroundColor: colors.surface }]}>
-          <View style={[styles.themeCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.themeTitle, { color: colors.text }]}>Appearance</Text>
-            <Text style={[styles.themeSubtitle, { color: colors.textMuted }]}>
-              Current: {preference === "system" ? `System (${resolvedThemeName})` : preference}
-            </Text>
-            <ThemeToggle />
-          </View>
+      {/* Theme toggle pinned at top — always visible without scrolling */}
+      <View style={[styles.themeBar, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <View style={styles.themeBarInner}>
+          <Text style={[styles.themeBarLabel, { color: colors.textMuted }]}>
+            {preference === "system" ? `System (${resolvedThemeName})` : preference.charAt(0).toUpperCase() + preference.slice(1)} mode
+          </Text>
+          <ThemeToggle />
+        </View>
+      </View>
 
+      <ScrollView contentContainerStyle={[styles.scrollContent, isDesktop && styles.desktopScrollContent]}>
+        <View style={[styles.innerCard, isDesktop && styles.innerCardDesktop]}>
           {!user ? (
             <View style={styles.emptyState}>
               <User size={64} color={colors.primary} />
@@ -76,7 +79,7 @@ export default function Profile() {
             </View>
           ) : (
             <View style={styles.userSection}>
-              <View style={styles.userInfo}>
+              <View style={[styles.userInfo, { borderBottomColor: colors.border }]}>
                 <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
                   <User size={40} color={colors.primaryText} />
                 </View>
@@ -90,7 +93,7 @@ export default function Profile() {
                 {menuItems.map((item, index) => (
                   <TouchableOpacity
                     key={index}
-                    style={[styles.menuItem, { borderBottomColor: colors.border }]}
+                    style={[styles.menuItem, { borderBottomColor: colors.border, backgroundColor: colors.surface }]}
                     onPress={() => router.push(item.route as any)}
                   >
                     <View style={styles.menuItemLeft}>
@@ -126,14 +129,24 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 18, marginTop: 20, marginBottom: 20 },
   loginButton: { paddingHorizontal: 40, paddingVertical: 15, borderRadius: 10 },
   loginButtonText: { fontSize: 16, fontWeight: "bold" },
-  themeCard: {
-    marginBottom: 16,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
+  themeBar: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
   },
-  themeTitle: { fontSize: 18, fontWeight: "700", marginBottom: 4 },
-  themeSubtitle: { fontSize: 13, marginBottom: 12 },
+  themeBarInner: {
+    maxWidth: 600,
+    alignSelf: 'center',
+    width: '100%',
+    gap: 8,
+  },
+  themeBarLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
   userSection: {},
   userInfo: { flexDirection: "row", alignItems: "center", paddingVertical: 20 },
   avatar: { width: 80, height: 80, borderRadius: 40, justifyContent: "center", alignItems: "center" },

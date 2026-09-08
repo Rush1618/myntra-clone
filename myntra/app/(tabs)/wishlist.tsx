@@ -14,6 +14,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useAppTheme } from "@/theme/ThemeProvider";
+import { HeaderThemeToggle } from "@/components/ui/ThemeToggle";
 import { API_BASE_URL } from "@/constants/Api";
 
 const dummyWishlistItems = [
@@ -57,11 +58,11 @@ export default function Wishlist() {
         if (bag.data && bag.data.length > 0) {
           setwishlist(bag.data);
         } else {
-          setwishlist(dummyWishlistItems);
+          setwishlist([]);
         }
       } catch (error) {
         console.log(error);
-        setwishlist(dummyWishlistItems);
+        setwishlist([]);
         setIsLoading(false);
       } finally {
         setIsLoading(false);
@@ -85,7 +86,7 @@ export default function Wishlist() {
         </View>
         <View style={styles.emptyState}>
           <Heart size={64} color={colors.primary} />
-          <Text style={[styles.emptyTitle, { color: colors.text }]}> 
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>
             Please login to view your wishlist
           </Text>
           <TouchableOpacity
@@ -107,10 +108,36 @@ export default function Wishlist() {
   }
   const cardWidth = isDesktop ? '23.5%' : isTablet ? '31.5%' : '47.5%';
 
+  // Empty state for logged-in users
+  if (!wishlist || wishlist.length === 0) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }]}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Wishlist</Text>
+          <HeaderThemeToggle />
+        </View>
+        <View style={styles.emptyState}>
+          <Heart size={64} color={colors.primary} />
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>Your wishlist is empty</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
+            Tap the ♡ on any product to save it here
+          </Text>
+          <TouchableOpacity
+            style={[styles.loginButton, { backgroundColor: colors.primary }]}
+            onPress={() => router.push('/(tabs)/categories')}
+          >
+            <Text style={[styles.loginButtonText, { color: colors.primaryText }]}>START WISHLISTING</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }]}>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Wishlist</Text>
+        <HeaderThemeToggle />
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={{ maxWidth: 1200, width: '100%', alignSelf: 'center' }}>
@@ -159,7 +186,8 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 24, fontWeight: "bold" },
   content: { flex: 1, padding: 15 },
   emptyState: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
-  emptyTitle: { fontSize: 18, marginTop: 20, marginBottom: 20 },
+  emptyTitle: { fontSize: 18, marginTop: 20, marginBottom: 8 },
+  emptySubtitle: { fontSize: 14, marginBottom: 20, textAlign: 'center' },
   loginButton: { paddingHorizontal: 40, paddingVertical: 15, borderRadius: 10 },
   loginButtonText: { fontSize: 16, fontWeight: "bold" },
   // Mobile list item

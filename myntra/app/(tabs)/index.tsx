@@ -16,6 +16,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { fetchRecentlyViewed } from "@/utils/recentlyViewed";
 import axios from "axios";
 import { useAppTheme } from "@/theme/ThemeProvider";
+import { HeaderThemeToggle } from "@/components/ui/ThemeToggle";
 import { RecommendationCarousel } from "@/components/RecommendationCarousel";
 import { fetchWithCache } from "@/utils/apiCache";
 import { API_BASE_URL } from "@/constants/Api";
@@ -102,9 +103,12 @@ export default function Home() {
       {!isDesktop && (
         <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
           <Text style={[styles.logo, { color: colors.text }]}>MYNTRA</Text>
-          <TouchableOpacity style={styles.searchButton}>
-            <Search size={24} color={colors.icon} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <HeaderThemeToggle />
+            <TouchableOpacity style={styles.searchButton}>
+              <Search size={22} color={colors.icon} />
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 

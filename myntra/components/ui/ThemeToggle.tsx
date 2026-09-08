@@ -1,5 +1,6 @@
 import React from "react";
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
+import { Sun, Moon, Palette } from "lucide-react-native";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import type { ThemePreference } from "@/theme/themes";
 
@@ -11,9 +12,7 @@ const OPTIONS: { label: string; value: ThemePreference }[] = [
 ];
 
 /**
- * ThemeToggle — renders a pill-style 3-option selector for Light / Dark / System.
- * Adding more themes only requires adding to the OPTIONS array and updating themes.ts.
- * Zero other component changes needed.
+ * ThemeToggle — renders a pill-style option selector for Light / Dark / Sepia / System.
  */
 export function ThemeToggle() {
   const { colors, preference, setThemePreference } = useAppTheme();
@@ -60,6 +59,59 @@ export function ThemeToggle() {
   );
 }
 
+/**
+ * HeaderThemeToggle — compact top-bar mode switch button for header.
+ * Displays current mode icon and allows 1-tap switching.
+ */
+export function HeaderThemeToggle() {
+  const { colors, preference, setThemePreference } = useAppTheme();
+
+  const toggleTheme = () => {
+    if (preference === "light") {
+      void setThemePreference("dark");
+    } else if (preference === "dark") {
+      void setThemePreference("sepia");
+    } else {
+      void setThemePreference("light");
+    }
+  };
+
+  const getIcon = () => {
+    if (preference === "dark") {
+      return <Moon size={18} color={colors.primary} />;
+    }
+    if (preference === "sepia") {
+      return <Palette size={18} color="#D97706" />;
+    }
+    return <Sun size={18} color={colors.primary} />;
+  };
+
+  const getLabel = () => {
+    if (preference === "dark") return "DARK";
+    if (preference === "sepia") return "SEPIA";
+    return "LIGHT";
+  };
+
+  return (
+    <TouchableOpacity
+      onPress={toggleTheme}
+      activeOpacity={0.75}
+      style={[
+        styles.headerBtn,
+        {
+          backgroundColor: colors.surfaceMuted,
+          borderColor: colors.border,
+        },
+      ]}
+    >
+      {getIcon()}
+      <Text style={[styles.headerLabel, { color: colors.text }]}>
+        {getLabel()}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
 const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
@@ -78,5 +130,19 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     letterSpacing: 0.2,
+  },
+  headerBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  headerLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
 });

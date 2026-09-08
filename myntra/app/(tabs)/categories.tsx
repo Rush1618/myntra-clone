@@ -17,6 +17,7 @@ import { useRouter } from "expo-router";
 import { Search, X, FolderX, RefreshCw, ShoppingBag } from "lucide-react-native";
 import axios from "axios";
 import { useAppTheme } from "@/theme/ThemeProvider";
+import { HeaderThemeToggle } from "@/components/ui/ThemeToggle";
 import { API_BASE_URL } from "@/constants/Api";
 import { fetchWithCache } from "@/utils/apiCache";
 
@@ -129,8 +130,9 @@ export default function TabTwoScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header — only on mobile */}
       {!isDesktop && (
-        <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }]}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Categories</Text>
+          <HeaderThemeToggle />
         </View>
       )}
 

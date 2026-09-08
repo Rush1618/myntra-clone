@@ -14,6 +14,7 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 import { useAppTheme } from "@/theme/ThemeProvider";
+import { HeaderThemeToggle } from "@/components/ui/ThemeToggle";
 
 import { API_BASE_URL } from "@/constants/Api";
 
@@ -155,7 +156,7 @@ export default function Bag() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }]}>
         <View style={styles.headerInner}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Shopping Bag</Text>
           {activeItems.length > 0 && (
@@ -164,6 +165,7 @@ export default function Bag() {
             </Text>
           )}
         </View>
+        <HeaderThemeToggle />
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>

@@ -159,6 +159,29 @@ router.post("/:userid/merge", async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Sync merged items to BrowsingHistory collection
+    try {
+      for (const item of incomingEntries) {
+        const rawId = item?.productId?._id || item?.productId || item?._id;
+        const pId = rawId?.toString ? rawId.toString() : rawId;
+        if (!pId || !mongoose.Types.ObjectId.isValid(pId)) continue;
+
+        const viewedAtDate = item.viewedAt ? new Date(item.viewedAt) : new Date();
+
+        await BrowsingHistory.findOneAndUpdate(
+          { userId: req.params.userid, productId: pId },
+          {
+            userId: req.params.userid,
+            productId: pId,
+            viewedAt: viewedAtDate,
+          },
+          { upsert: true, new: true }
+        );
+      }
+    } catch (histErr) {
+      console.error("BrowsingHistory merge sync failed (non-fatal):", histErr.message);
+    }
+
     const populated = await User.findById(req.params.userid).populate(
       "recentlyViewed.productId"
     );

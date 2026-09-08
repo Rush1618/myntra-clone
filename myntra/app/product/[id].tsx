@@ -214,7 +214,7 @@ export default function ProductDetails() {
     }, 3000);
   };
 
-  if (isLoading && !product) {
+  if (isLoading) {
     return (
       <View style={[styles.loaderContainer, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -450,13 +450,11 @@ export default function ProductDetails() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
   },
   loaderContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fff",
   },
   carouselContainer: {
     position: "relative",
@@ -495,13 +493,11 @@ const styles = StyleSheet.create({
   },
   brand: {
     fontSize: 16,
-    color: "#666",
     marginBottom: 5,
   },
   name: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#3e3e3e",
     marginBottom: 10,
   },
   wishlistButton: {
@@ -515,16 +511,13 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#3e3e3e",
     marginRight: 10,
   },
   discount: {
     fontSize: 16,
-    color: "#ff3f6c",
   },
   description: {
     fontSize: 16,
-    color: "#666",
     lineHeight: 24,
     marginBottom: 20,
   },
@@ -534,7 +527,6 @@ const styles = StyleSheet.create({
   sizeTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#3e3e3e",
     marginBottom: 10,
   },
   sizeGrid: {
@@ -547,29 +539,19 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     borderWidth: 1,
-    borderColor: "#ddd",
     justifyContent: "center",
     alignItems: "center",
   },
-  selectedSize: {
-    borderColor: "#ff3f6c",
-    backgroundColor: "#fff4f4",
-  },
+  selectedSize: {},
   sizeText: {
     fontSize: 16,
-    color: "#3e3e3e",
   },
-  selectedSizeText: {
-    color: "#ff3f6c",
-  },
+  selectedSizeText: {},
   footer: {
     padding: 15,
-    backgroundColor: "#fff",
     borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
   },
   addToBagButton: {
-    backgroundColor: "#ff3f6c",
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
