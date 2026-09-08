@@ -104,7 +104,12 @@ export default function Wishlist() {
       </View>
     );
   }
-  const columns = isDesktop ? 4 : 1;
+  const isTablet = width >= 768;
+  const numColumns = isDesktop ? 4 : isTablet ? 3 : 2;
+  const gridPadding = 16;
+  const gridGap = 12;
+  const availableWidth = isDesktop ? Math.min(width, 1200) - gridPadding * 2 : width - gridPadding * 2;
+  const cardWidth = Math.max(140, Math.floor((availableWidth - (numColumns - 1) * gridGap) / numColumns));
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -113,55 +118,36 @@ export default function Wishlist() {
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={{ maxWidth: 1200, width: '100%', alignSelf: 'center' }}>
-        <View style={isDesktop ? styles.desktopGrid : undefined}>
+        <View style={styles.gridContainer}>
           {wishlist?.map((item:any, index: number) => {
             const productInfo = item.productId || item;
             const imageUri = Array.isArray(productInfo.images) ? productInfo.images?.[0] : (productInfo.image || productInfo.images);
             const price = productInfo.price;
             const discount = productInfo.discount ? `${productInfo.discount}% OFF` : null;
 
-            if (isDesktop) {
-              return (
-                <TouchableOpacity
-                  key={item._id || index}
-                  style={[styles.desktopCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}
-                  onPress={() => router.push(`/product/${productInfo._id}`)}
-                >
-                  <Image source={{ uri: imageUri }} style={styles.desktopCardImage} />
-                  <View style={{ padding: 10 }}>
-                    <Text style={[styles.brandName, { color: colors.textMuted }]}>{productInfo.brand}</Text>
-                    <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={2}>{productInfo.name}</Text>
-                    <View style={styles.priceContainer}>
-                      <Text style={[styles.price, { color: colors.text }]}>₹{price}</Text>
-                      {discount && <Text style={[styles.discount, { color: colors.primary }]}>{discount}</Text>}
-                    </View>
-                    <TouchableOpacity
-                      style={[styles.removeBtn, { borderColor: colors.primary }]}
-                      onPress={() => handledelete(item._id)}
-                    >
-                      <Trash2 size={14} color={colors.primary} />
-                      <Text style={[styles.removeBtnText, { color: colors.primary }]}>Remove</Text>
-                    </TouchableOpacity>
-                  </View>
-                </TouchableOpacity>
-              );
-            }
-
             return (
-              <View key={item._id || index} style={[styles.wishlistItem, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
-                <Image source={{ uri: imageUri }} style={styles.itemImage} />
-                <View style={styles.itemInfo}>
-                  <Text style={[styles.brandName, { color: colors.textMuted }]}>{productInfo.brand}</Text>
+              <TouchableOpacity
+                key={item._id || index}
+                style={[styles.desktopCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, width: cardWidth }]}
+                onPress={() => router.push(`/product/${productInfo._id}`)}
+              >
+                <Image source={{ uri: imageUri }} style={styles.desktopCardImage} />
+                <View style={{ padding: 10 }}>
+                  <Text style={[styles.brandName, { color: colors.textMuted }]} numberOfLines={1}>{productInfo.brand}</Text>
                   <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={2}>{productInfo.name}</Text>
                   <View style={styles.priceContainer}>
                     <Text style={[styles.price, { color: colors.text }]}>₹{price}</Text>
                     {discount && <Text style={[styles.discount, { color: colors.primary }]}>{discount}</Text>}
                   </View>
+                  <TouchableOpacity
+                    style={[styles.removeBtn, { borderColor: colors.primary }]}
+                    onPress={() => handledelete(item._id)}
+                  >
+                    <Trash2 size={14} color={colors.primary} />
+                    <Text style={[styles.removeBtnText, { color: colors.primary }]}>Remove</Text>
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity style={styles.removeButton} onPress={() => handledelete(item._id)}>
-                  <Trash2 size={24} color={colors.primary} />
-                </TouchableOpacity>
-              </View>
+              </TouchableOpacity>
             );
           })}
         </View>
@@ -199,21 +185,20 @@ const styles = StyleSheet.create({
   price: { fontSize: 15, fontWeight: "bold", marginRight: 10 },
   discount: { fontSize: 13 },
   removeButton: { padding: 15, justifyContent: "center" },
-  // Desktop grid
-  desktopGrid: {
+  gridContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 16,
-    padding: 8,
+    gap: 12,
+    paddingVertical: 8,
   },
   desktopCard: {
-    width: '23%',
     borderRadius: 10,
     overflow: "hidden",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 3,
+    marginBottom: 4,
   },
   desktopCardImage: { width: '100%', height: 220 },
   removeBtn: {

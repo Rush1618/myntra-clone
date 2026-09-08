@@ -94,7 +94,11 @@ export default function Home() {
 
   // Responsive grid columns
   const productColumns = isDesktop ? 4 : isTablet ? 3 : 2;
-  const productCardWidth = `${Math.floor(100 / productColumns) - 1}%` as any;
+  const mainWidth = isDesktop ? Math.min(width, 1200) - 248 : Math.min(width, 1200);
+  const sectionPadding = 30;
+  const gridGap = 12;
+  const availableGridWidth = mainWidth - sectionPadding;
+  const productCardWidth = Math.max(140, Math.floor((availableGridWidth - (productColumns - 1) * gridGap) / productColumns));
   const maxContentWidth = isDesktop ? 1200 : '100%';
 
   return (

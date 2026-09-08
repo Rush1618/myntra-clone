@@ -28,9 +28,11 @@ export default function RecentlyViewedScreen() {
   const [items, setItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Responsive column calculation: 4 for desktop, 3 for tablet, 2 for mobile
   const numColumns = width >= 960 ? 4 : width >= 600 ? 3 : 2;
-  const cardWidth: DimensionValue = `${Math.floor(100 / numColumns) - 2}%` as DimensionValue;
+  const gridPadding = 24;
+  const gridGap = 12;
+  const gridWidth = Math.min(width, 1100) - gridPadding;
+  const cardWidth = Math.max(130, Math.floor((gridWidth - (numColumns - 1) * gridGap) / numColumns));
 
   useFocusEffect(
     React.useCallback(() => {

@@ -101,7 +101,11 @@ export default function TabTwoScreen() {
     ? categories?.find((cat: any) => cat._id === selectedCategory)
     : null;
   const productColumns = isDesktop ? 4 : isTablet ? 3 : 2;
-  const productCardWidth = `${Math.floor(100 / productColumns) - 1}%` as any;
+  const mainWidth = isDesktop ? width - 220 : width;
+  const gridGap = 12;
+  const availableGridWidth = mainWidth - 24;
+  const productCardWidth = Math.max(130, Math.floor((availableGridWidth - (productColumns - 1) * gridGap) / productColumns));
+  const categoryCardWidth = Math.floor((width - 30 - 12) / 2);
 
   const renderProducts = (products: any) => {
     return products?.map((product: any) => {
@@ -243,7 +247,7 @@ export default function TabTwoScreen() {
                   {filtercategories?.map((category: any) => (
                     <TouchableOpacity
                       key={category._id}
-                      style={[styles.categoryCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}
+                      style={[styles.categoryCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, width: categoryCardWidth }]}
                       onPress={() => handleCategorySelect(category._id)}
                     >
                       <Image source={{ uri: category.image }} style={styles.categoryImage} />
@@ -358,7 +362,7 @@ const styles = StyleSheet.create({
   filterItem: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 6, marginHorizontal: 8, marginBottom: 2 },
   filterItemText: { fontSize: 14 },
   content: { flex: 1 },
-  categoriesGrid: { padding: 15 },
+  categoriesGrid: { padding: 15, flexDirection: "row", flexWrap: "wrap", gap: 12 },
   categoryCard: {
     borderRadius: 10,
     marginBottom: 15,

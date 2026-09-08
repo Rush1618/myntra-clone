@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, useWindowDimensions } from "react-native";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import axios from "axios";
 import { ArrowLeft } from "lucide-react-native";
@@ -10,6 +10,11 @@ export default function DealPage() {
   const { title } = useLocalSearchParams();
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 1024;
+  const isTablet = width >= 768;
+  const numColumns = isDesktop ? 4 : isTablet ? 3 : 2;
+  const cardWidth = Math.max(130, Math.floor((Math.min(width, 1200) - 30 - (numColumns - 1) * 12) / numColumns));
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -68,7 +73,7 @@ export default function DealPage() {
           products.map((product: any) => (
             <TouchableOpacity
               key={product._id}
-              style={[styles.productCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}
+              style={[styles.productCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, width: cardWidth }]}
               onPress={() => router.push(`/product/${product._id}`)}
             >
               <Image source={{ uri: product.images?.[0] }} style={styles.productImage} />
@@ -103,12 +108,11 @@ const styles = StyleSheet.create({
     padding: 15,
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
+    gap: 12,
   },
   productCard: {
-    width: "48%",
     borderRadius: 10,
-    marginBottom: 15,
+    marginBottom: 4,
     elevation: 3,
     overflow: "hidden",
   },

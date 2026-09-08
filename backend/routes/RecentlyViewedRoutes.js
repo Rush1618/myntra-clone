@@ -16,7 +16,10 @@ const normalizeEntries = (entries = []) => {
   const merged = new Map();
 
   entries.forEach((entry) => {
-    const productId = entry?.productId?._id?.toString?.() ?? entry?.productId?.toString?.() ?? entry?.productId;
+    // DB entries use 'productId', frontend items use '_id'
+    let rawId = entry?.productId?._id || entry?.productId || entry?._id;
+    let productId = rawId?.toString ? rawId.toString() : rawId;
+
     if (!productId) {
       return;
     }

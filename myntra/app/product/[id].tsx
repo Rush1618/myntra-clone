@@ -9,6 +9,7 @@ import {
   useWindowDimensions,
   ActivityIndicator,
   Alert,
+  Platform,
 } from "react-native";
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { Heart, ShoppingBag, ArrowLeft } from "lucide-react-native";
@@ -148,9 +149,12 @@ export default function ProductDetails() {
   const scrollViewRef = useRef<ScrollView>(null);
   const autoScrollTimer = useRef<NodeJS.Timeout>();
   const { user } = useAuth();
-  const productIdKey = String(id || "1");
-  const [product, setproduct] = useState<any>(MOCK_PRODUCTS_MAP[productIdKey] || MOCK_PRODUCTS_MAP["1"]);
+  
+  // Do NOT default to MOCK_PRODUCTS_MAP["1"], only use mock if ID matches exactly, otherwise start null
+  const productIdKey = String(id || "");
+  const [product, setproduct] = useState<any>(MOCK_PRODUCTS_MAP[productIdKey] || null);
   const [iswishlist, setiswishlist] = useState(false);
+
   useEffect(() => {
     const fetchproduct = async () => {
       try {
@@ -180,7 +184,7 @@ export default function ProductDetails() {
         brand: product.brand,
         price: product.price,
         discount: product.discount,
-        images: product.images,
+        images: product.images || [],
       },
       user?._id
     );
@@ -195,11 +199,11 @@ export default function ProductDetails() {
         clearInterval(autoScrollTimer.current);
       }
     };
-  }, []);
+  }, [product]); // Re-bind auto-scroll if product loads
 
   const startAutoScroll = () => {
     autoScrollTimer.current = setInterval(() => {
-      if (product && scrollViewRef.current) {
+      if (product?.images?.length && scrollViewRef.current) {
         const nextIndex = (currentImageIndex + 1) % product.images.length;
         scrollViewRef.current.scrollTo({
           x: nextIndex * width,
