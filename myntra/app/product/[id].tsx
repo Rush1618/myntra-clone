@@ -214,10 +214,26 @@ export default function ProductDetails() {
     }, 3000);
   };
 
+  if (isLoading && !product) {
+    return (
+      <View style={[styles.loaderContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
   if (!product) {
     return (
-      <View style={styles.container}>
-        <Text>Product not found</Text>
+      <View style={[styles.container, { backgroundColor: colors.background, justifyContent: "center", alignItems: "center", padding: 24 }]}>
+        <Text style={{ color: colors.text, fontSize: 18, fontWeight: "600", marginBottom: 16, textAlign: "center" }}>
+          Product not found
+        </Text>
+        <TouchableOpacity
+          style={{ paddingHorizontal: 24, paddingVertical: 12, backgroundColor: colors.primary, borderRadius: 25 }}
+          onPress={() => router.back()}
+        >
+          <Text style={{ color: "#FFFFFF", fontWeight: "600", fontSize: 15 }}>Go Back</Text>
+        </TouchableOpacity>
       </View>
     );
   }
